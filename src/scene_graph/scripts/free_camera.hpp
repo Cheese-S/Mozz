@@ -3,7 +3,7 @@
 #include "common/glm_common.hpp"
 #include "scene_graph/script.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 class FreeCamera : public NodeScript
 {
@@ -27,4 +27,4 @@ class FreeCamera : public NodeScript
 	std::unordered_map<KeyCode, bool>     key_pressed_;
 	std::unordered_map<MouseButton, bool> mouse_button_pressed_;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

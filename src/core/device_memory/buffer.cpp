@@ -2,7 +2,7 @@
 #include "common/error.hpp"
 #include "common/utils.hpp"
 
-namespace W3D
+namespace mz
 {
 
 Buffer::Buffer(Key<DeviceMemoryAllocator> key, VmaAllocator allocator, std::nullptr_t nptr) :
@@ -88,4 +88,4 @@ void Buffer::flush()
 		vmaFlushAllocation(details_.allocator, details_.allocation, 0, details_.allocation_info.size);
 	}
 }
-}        // namespace W3D
+}        // namespace mz

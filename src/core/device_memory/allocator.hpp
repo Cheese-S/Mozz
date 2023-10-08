@@ -5,7 +5,7 @@
 
 #include <vk_mem_alloc.h>
 
-namespace W3D
+namespace mz
 {
 class Device;
 class Image;
@@ -29,4 +29,4 @@ class DeviceMemoryAllocator : public VulkanObject<VmaAllocator>
 	Image allocate_null_image() const;
 };
 
-}        // namespace W3D
+}        // namespace mz

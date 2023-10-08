@@ -1,6 +1,6 @@
 #include "mesh.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 
 Mesh::Mesh(const std::string &name) :
@@ -40,4 +40,4 @@ const std::vector<Node *> &Mesh::get_p_nodes() const
 {
 	return p_nodes;
 }
-}        // namespace W3D::sg
+}        // namespace mz::sg

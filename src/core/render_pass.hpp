@@ -3,7 +3,7 @@
 #include "common/vk_common.hpp"
 #include "core/vulkan_object.hpp"
 
-namespace W3D
+namespace mz
 {
 class Device;
 class Swapchain;
@@ -22,4 +22,4 @@ class RenderPass : public VulkanObject<vk::RenderPass>
   private:
 	Device &device_;
 };
-}        // namespace W3D
+}        // namespace mz

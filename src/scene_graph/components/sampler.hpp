@@ -4,7 +4,7 @@
 #include "core/sampler.hpp"
 #include "scene_graph/component.hpp"
 
-namespace W3D
+namespace mz
 {
 class Device;
 
@@ -21,7 +21,7 @@ class Sampler : public Component
 
   private:
 	const Device &device_;
-	W3D::Sampler  sampler_;
+	mz::Sampler   sampler_;
 };
 }        // namespace sg
-}        // namespace W3D
+}        // namespace mz

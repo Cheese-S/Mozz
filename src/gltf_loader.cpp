@@ -32,7 +32,7 @@
 #include "scene_graph/scene.hpp"
 #include "scene_graph/scripts/animation.hpp"
 
-namespace W3D
+namespace mz
 {
 
 inline vk::Filter             to_vk_min_filter(int min_filter);
@@ -43,10 +43,10 @@ sg::PBRMaterialFlagBits       to_sg_material_flag_bit(const std::string &texture
 inline void                   to_sg_channel_output(sg::AnimationChannel &channel);
 inline sg::AnimationType      to_sg_animation_type(const std::string &interpolation);
 inline sg::AnimationTarget    to_sg_animation_target(const std::string &target);
-inline void                   to_W3D_vector_in_place(glm::vec3 &vec);
-inline void                   to_W3D_quaternion_in_place(glm::quat &quat);
-inline void                   to_W3D_matrix_in_place(glm::mat4 &M);
-void                          to_W3D_output_data_in_place(sg::AnimationSampler &sampler, sg::AnimationTarget target);
+inline void                   to_mz_vector_in_place(glm::vec3 &vec);
+inline void                   to_mz_quaternion_in_place(glm::quat &quat);
+inline void                   to_mz_matrix_in_place(glm::mat4 &M);
+void                          to_mz_output_data_in_place(sg::AnimationSampler &sampler, sg::AnimationTarget target);
 inline vk::Format             get_attr_format(const tinygltf::Model &model, uint32_t accessor_id);
 inline std::vector<uint8_t>   get_attr_data(const tinygltf::Model &model, uint32_t accessor_id);
 inline std::vector<uint8_t>   convert_data_stride(const std::vector<uint8_t> &src, uint32_t src_stride, uint32_t dst_stride);
@@ -57,7 +57,7 @@ const glm::vec4 DEFAULT_JOINT  = glm::vec4(0.0f);
 const glm::vec4 DEFAULT_WEIGHT = glm::vec4(0.0f);
 const glm::vec4 DEFAULT_COLOR  = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-const glm::vec3 GLTFLoader::W3D_CONVERSION_SCALE = glm::vec3(-1, 1, 1);
+const glm::vec3 GLTFLoader::MZ_CONVERSION_SCALE = glm::vec3(-1, 1, 1);
 
 template <class T, class Y>
 struct TypeCast
@@ -583,8 +583,8 @@ std::unique_ptr<sg::SubMesh> GLTFLoader::parse_submesh(sg::Mesh *p_mesh, const t
 		    .weight = is_skinned ? glm::make_vec4(&weight.p_data[i * weight.stride]) : DEFAULT_WEIGHT,
 		    .color  = color.p_data ? glm::make_vec4(&color.p_data[i * color.stride]) : DEFAULT_COLOR,
 		});
-		to_W3D_vector_in_place(vertexs.back().pos);
-		to_W3D_vector_in_place(vertexs.back().norm);
+		to_mz_vector_in_place(vertexs.back().pos);
+		to_mz_vector_in_place(vertexs.back().norm);
 	}
 
 	size_t vertex_buf_size    = vertexs.size() * sizeof(sg::Vertex);
@@ -775,7 +775,7 @@ std::unique_ptr<sg::Node> GLTFLoader::parse_node(const tinygltf::Node &gltf_node
 	{
 		glm::vec3 translation;
 		std::transform(gltf_node.translation.begin(), gltf_node.translation.end(), glm::value_ptr(translation), TypeCast<double, float>{});
-		to_W3D_vector_in_place(translation);
+		to_mz_vector_in_place(translation);
 		transform.set_tranlsation(translation);
 	}
 
@@ -786,7 +786,7 @@ std::unique_ptr<sg::Node> GLTFLoader::parse_node(const tinygltf::Node &gltf_node
 		rotation.y = gltf_node.rotation[1];
 		rotation.z = gltf_node.rotation[2];
 		rotation.w = gltf_node.rotation[3];
-		to_W3D_quaternion_in_place(rotation);
+		to_mz_quaternion_in_place(rotation);
 		transform.set_rotation(rotation);
 	}
 
@@ -801,7 +801,7 @@ std::unique_ptr<sg::Node> GLTFLoader::parse_node(const tinygltf::Node &gltf_node
 	{
 		glm::mat4 matrix;
 		std::transform(gltf_node.matrix.begin(), gltf_node.matrix.end(), glm::value_ptr(matrix), TypeCast<double, float>{});
-		to_W3D_matrix_in_place(matrix);
+		to_mz_matrix_in_place(matrix);
 		transform.set_local_M(matrix);
 	}
 
@@ -876,7 +876,7 @@ std::vector<sg::AnimationChannel> GLTFLoader::parse_animation_channels(const tin
 		    .target  = to_sg_animation_target(gltf_channel.target_path),
 		    .sampler = samplers[gltf_channel.sampler],
 		});
-		to_W3D_output_data_in_place(channels.back().sampler, channels.back().target);
+		to_mz_output_data_in_place(channels.back().sampler, channels.back().target);
 	}
 
 	return channels;
@@ -982,7 +982,7 @@ std::unique_ptr<sg::Skin> GLTFLoader::parse_skin(const tinygltf::Skin &gltf_skin
 	{
 		p_skin->add_new_joint(joint_id, joints[joint_id]);
 		glm::mat4 m = glm::make_mat4(&IBM.p_data[joint_id * IBM.stride]);
-		to_W3D_matrix_in_place(m);
+		to_mz_matrix_in_place(m);
 		IBMs[joint_id] = m;
 	}
 
@@ -1125,28 +1125,28 @@ inline sg::AnimationTarget to_sg_animation_target(const std::string &target)
 	return sg::AnimationTarget::eTranslation;
 }
 
-inline void to_W3D_vector_in_place(glm::vec3 &vec)
+inline void to_mz_vector_in_place(glm::vec3 &vec)
 {
-	vec *= GLTFLoader::W3D_CONVERSION_SCALE;
+	vec *= GLTFLoader::MZ_CONVERSION_SCALE;
 }
 
-inline void to_W3D_quaternion_in_place(glm::quat &quat)
+inline void to_mz_quaternion_in_place(glm::quat &quat)
 {
 	// We need to flip the handiness
 	float     flip_scale        = -1;
-	glm::vec3 new_axis_rotation = flip_scale * glm::vec3(quat.x, quat.y, quat.z) * GLTFLoader::W3D_CONVERSION_SCALE;
+	glm::vec3 new_axis_rotation = flip_scale * glm::vec3(quat.x, quat.y, quat.z) * GLTFLoader::MZ_CONVERSION_SCALE;
 	quat.x                      = new_axis_rotation.x;
 	quat.y                      = new_axis_rotation.y;
 	quat.z                      = new_axis_rotation.z;
 }
 
-inline void to_W3D_matrix_in_place(glm::mat4 &M)
+inline void to_mz_matrix_in_place(glm::mat4 &M)
 {
-	glm::mat4 convert = glm::scale(glm::mat4(1.0f), GLTFLoader::W3D_CONVERSION_SCALE);
+	glm::mat4 convert = glm::scale(glm::mat4(1.0f), GLTFLoader::MZ_CONVERSION_SCALE);
 	M                 = convert * M * convert;
 }
 
-void to_W3D_output_data_in_place(sg::AnimationSampler &sampler, sg::AnimationTarget target)
+void to_mz_output_data_in_place(sg::AnimationSampler &sampler, sg::AnimationTarget target)
 {
 	switch (target)
 	{
@@ -1155,7 +1155,7 @@ void to_W3D_output_data_in_place(sg::AnimationSampler &sampler, sg::AnimationTar
 			std::vector<glm::vec3> &vecs = sampler.get_mut_vecs();
 			for (auto &vec : vecs)
 			{
-				to_W3D_vector_in_place(vec);
+				to_mz_vector_in_place(vec);
 			}
 			break;
 		}
@@ -1164,7 +1164,7 @@ void to_W3D_output_data_in_place(sg::AnimationSampler &sampler, sg::AnimationTar
 			std::vector<glm::quat> &quats = sampler.get_mut_quats();
 			for (auto &quat : quats)
 			{
-				to_W3D_quaternion_in_place(quat);
+				to_mz_quaternion_in_place(quat);
 			}
 			break;
 		}
@@ -1332,4 +1332,4 @@ std::vector<uint8_t> convert_data_stride(const std::vector<uint8_t> &src,
 	return dst;
 }
 
-}        // namespace W3D
+}        // namespace mz

@@ -31,7 +31,7 @@ VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(VkInstance instance, 
 	return destory_debug_utils_messenger(instance, messenger, pAllocator);
 }
 
-namespace W3D
+namespace mz
 {
 
 const std::vector<const char *> Instance::VALIDATION_LAYERS = {
@@ -252,4 +252,4 @@ const vk::SurfaceKHR &Instance::get_surface() const
 	return surface_;
 }
 
-}        // namespace W3D
+}        // namespace mz

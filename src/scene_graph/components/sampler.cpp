@@ -2,7 +2,7 @@
 
 #include "core/device.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 Sampler::Sampler(const Device &device, const std::string &name, vk::SamplerCreateInfo &sampler_cinfo) :
     Component(name),
@@ -18,4 +18,4 @@ vk::Sampler Sampler::get_handle()
 {
 	return sampler_.get_handle();
 }
-}        // namespace W3D::sg
+}        // namespace mz::sg

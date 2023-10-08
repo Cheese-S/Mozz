@@ -34,7 +34,7 @@
 #include "scene_graph/script.hpp"
 #include "scene_graph/scripts/animation.hpp"
 
-namespace W3D
+namespace mz
 {
 const uint32_t Renderer::NUM_INFLIGHT_FRAMES  = 2;
 const uint32_t Renderer::IRRADIANCE_DIMENSION = 2;
@@ -287,7 +287,7 @@ void Renderer::draw_skybox(CommandBuffer &cmd_buf)
 	    0,
 	    pco);
 	draw_submesh(cmd_buf, *baked_pbr_.p_box);
-}        // namespace W3D
+}        // namespace mz
 
 void Renderer::draw_scene(CommandBuffer &cmd_buf)
 {
@@ -682,4 +682,4 @@ void Renderer::create_pipeline_resources()
 	skybox_.p_pl                                    = std::make_unique<GraphicsPipeline>(*p_device_, *p_render_pass_, pl_state, skybox_pl_layout_cinfo);
 }
 
-}        // namespace W3D
+}        // namespace mz

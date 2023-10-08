@@ -11,7 +11,7 @@
 
 extern const char *APP_NAME;
 
-namespace W3D
+namespace mz
 {
 
 const int Window::DEFAULT_WINDOW_WIDTH  = 800;
@@ -216,4 +216,4 @@ GLFWwindow *Window::get_handle()
 	return handle_;
 }
 
-}        // namespace W3D
+}        // namespace mz

@@ -6,7 +6,7 @@
 #include "common/glm_common.hpp"
 #include "scene_graph/component.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 class Node;
 class Scene;
@@ -27,4 +27,4 @@ class Skin : public Component
 	std::unordered_map<uint32_t, int>     node_joint_map_;
 	std::unordered_map<int, uint32_t>     joint_node_map_;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

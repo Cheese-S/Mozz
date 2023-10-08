@@ -4,7 +4,7 @@
 #include "device.hpp"
 #include "vulkan/vulkan_hash.hpp"
 
-namespace W3D
+namespace mz
 {
 
 // Mental Model: DescriptorSets contains a set of ptrs that points to resources (buffers / images).
@@ -302,4 +302,4 @@ size_t DescriptorLayoutCache::DescriptorSetLayoutDetails::hash() const
 	return result;
 }
 
-}        // namespace W3D
+}        // namespace mz

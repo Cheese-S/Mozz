@@ -1,6 +1,6 @@
 #pragma once
 
-namespace W3D
+namespace mz
 {
 enum class EventType
 {
@@ -96,4 +96,4 @@ struct ScrollEvent : Event
 	float y_offset;
 };
 
-}        // namespace W3D
+}        // namespace mz

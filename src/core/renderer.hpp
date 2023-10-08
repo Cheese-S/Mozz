@@ -11,7 +11,7 @@
 #include "scene_graph/components/skin.hpp"
 #include "sync_objects.hpp"
 
-namespace W3D
+namespace mz
 {
 
 namespace sg
@@ -269,4 +269,4 @@ class Renderer
 // 	LUT                                                                    brdf_lut_      = {nullptr, nullptr, nullptr};
 // 	std::unique_ptr<SceneGraph::Scene>                                     pSkybox_scene_ = nullptr;
 // };
-}        // namespace W3D
+}        // namespace mz

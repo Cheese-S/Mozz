@@ -5,7 +5,7 @@
 #include "core/vulkan_object.hpp"
 #include <vk_mem_alloc.h>
 
-namespace W3D
+namespace mz
 {
 
 class DeviceMemoryAllocator;
@@ -53,4 +53,4 @@ class DeviceMemoryObject : public VulkanObject<THandle>
 	DeviceAllocationDetails details_;
 };
 
-}        // namespace W3D
+}        // namespace mz

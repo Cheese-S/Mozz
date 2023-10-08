@@ -4,7 +4,7 @@
 #include "common/utils.hpp"
 #include <string>
 
-namespace W3D
+namespace mz
 {
 
 struct CVarProperty
@@ -206,4 +206,4 @@ static CVarSystem &get()
 	return cvar_sys;
 };
 
-}        // namespace W3D
+}        // namespace mz

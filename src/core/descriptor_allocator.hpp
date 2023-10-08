@@ -4,7 +4,7 @@
 
 #include "common/vk_common.hpp"
 
-namespace W3D
+namespace mz
 {
 class Device;
 
@@ -103,4 +103,4 @@ struct DescriptorState
 	DescriptorAllocator   allocator;
 	DescriptorLayoutCache cache;
 };
-}        // namespace W3D
+}        // namespace mz

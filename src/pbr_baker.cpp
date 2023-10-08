@@ -18,14 +18,14 @@
 
 #include "renderdoc_app.h"
 
-W3D_DISABLE_WARNINGS()
+MZ_DISABLE_WARNINGS()
 #include <libloaderapi.h>
 #include <minwindef.h>
-W3D_ENABLE_WARNINGS()
+MZ_ENABLE_WARNINGS()
 
 RENDERDOC_API_1_1_2 *rdoc_api = nullptr;
 
-namespace W3D
+namespace mz
 {
 
 PBR::PBR(){};
@@ -645,4 +645,4 @@ void PBRBaker::transfer_from_src_to_texture(CommandBuffer &cmd_buf, ImageResourc
 	cmd_buf.set_image_layout(src, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eColorAttachmentOptimal);
 }
 
-}        // namespace W3D
+}        // namespace mz

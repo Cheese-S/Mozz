@@ -7,7 +7,7 @@
 #include "image_view.hpp"
 #include "physical_device.hpp"
 
-namespace W3D
+namespace mz
 {
 
 Swapchain::Swapchain(Device &device, vk::Extent2D window_extent) :
@@ -367,4 +367,4 @@ const ImageResource &Swapchain::get_depth_resource() const
 //     return std::make_pair(result, imageIndex);
 // }
 
-}        // namespace W3D
+}        // namespace mz

@@ -4,7 +4,7 @@
 #include "scene_graph/event.hpp"
 #include "scene_graph/node.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 
 class Script : public Component
@@ -30,4 +30,4 @@ class NodeScript : public Script
   private:
 	Node &node_;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

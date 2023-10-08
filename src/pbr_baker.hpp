@@ -8,7 +8,7 @@
 #include "core/image_resource.hpp"
 #include "core/sampler.hpp"
 
-namespace W3D
+namespace mz
 {
 namespace sg
 {
@@ -85,4 +85,4 @@ class PBRBaker
 	PBR             result_;
 	DescriptorState desc_state_;
 };
-}        // namespace W3D
+}        // namespace mz

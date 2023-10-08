@@ -1,6 +1,6 @@
 #include "script.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 Script::Script(const std::string &name) :
     Component(name){};
@@ -29,4 +29,4 @@ Node &NodeScript::get_node()
 	return node_;
 };
 
-}        // namespace W3D::sg
+}        // namespace mz::sg

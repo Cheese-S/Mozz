@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string>
 
-namespace W3D
+namespace mz
 {
 class CVarProperty;
 
@@ -25,4 +25,4 @@ class CVarSystem
 	// pimpl
 };
 
-}        // namespace W3D
+}        // namespace mz

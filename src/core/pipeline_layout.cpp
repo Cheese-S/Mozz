@@ -2,7 +2,7 @@
 
 #include "device.hpp"
 
-namespace W3D
+namespace mz
 {
 
 PipelineLayout::PipelineLayout(Device &device, std::nullptr_t nptr) :
@@ -23,4 +23,4 @@ PipelineLayout::~PipelineLayout()
 		device_.get_handle().destroyPipelineLayout(handle_);
 	}
 }
-}        // namespace W3D
+}        // namespace mz

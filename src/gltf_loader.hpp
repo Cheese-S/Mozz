@@ -6,7 +6,7 @@
 
 #include "common/glm_common.hpp"
 
-namespace W3D
+namespace mz
 {
 class Device;
 
@@ -38,7 +38,7 @@ struct ImageTransferInfo;
 class GLTFLoader
 {
   public:
-	static const glm::vec3 W3D_CONVERSION_SCALE;
+	static const glm::vec3 MZ_CONVERSION_SCALE;
 
 	GLTFLoader(Device const &device);
 	virtual ~GLTFLoader() = default;
@@ -139,4 +139,4 @@ class GLTFLoader
 	std::vector<ImageTransferInfo> img_tinfos_;
 };
 
-}        // namespace W3D
+}        // namespace mz

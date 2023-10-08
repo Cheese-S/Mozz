@@ -4,7 +4,7 @@
 #include <fstream>
 #include <unordered_map>
 
-namespace W3D::fu
+namespace mz::fu
 {
 
 const std::unordered_map<FileType, std::string> relative_paths = {
@@ -53,4 +53,4 @@ const std::string compute_abs_path(const FileType type, const std::string &file)
 	return relative_paths.at(type) + file;
 }
 
-}        // namespace W3D::fu
+}        // namespace mz::fu

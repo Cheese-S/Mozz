@@ -3,7 +3,7 @@
 #include "common/vk_common.hpp"
 #include "core/vulkan_object.hpp"
 
-namespace W3D
+namespace mz
 {
 class Device;
 class PipelineLayout;
@@ -87,4 +87,4 @@ class GraphicsPipeline : public VulkanObject<vk::Pipeline>
 	vk::PipelineLayout pl_layout_;
 };
 
-}        // namespace W3D
+}        // namespace mz

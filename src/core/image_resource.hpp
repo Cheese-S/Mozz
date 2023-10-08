@@ -6,7 +6,7 @@
 
 #include <memory>
 
-namespace W3D
+namespace mz
 {
 
 struct ImageLoadResult;
@@ -58,4 +58,4 @@ struct ImageLoadResult
 	ImageTransferInfo image_tifno;
 };
 
-};        // namespace W3D
+};        // namespace mz

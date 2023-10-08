@@ -6,7 +6,7 @@
 
 #include "components/transform.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 
 class Node
@@ -46,4 +46,4 @@ class Node
 	std::vector<Node *>                              children_;
 	std::unordered_map<std::type_index, Component *> components_;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

@@ -3,7 +3,7 @@
 #include "device.hpp"
 #include "physical_device.hpp"
 
-namespace W3D
+namespace mz
 {
 
 vk::SamplerCreateInfo Sampler::linear_clamp_cinfo(const PhysicalDevice &physical_device, float max_lod)
@@ -49,4 +49,4 @@ Sampler::~Sampler()
 	}
 }
 
-}        // namespace W3D
+}        // namespace mz

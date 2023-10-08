@@ -3,7 +3,7 @@
 #include "common/vk_common.hpp"
 #include "core/vulkan_object.hpp"
 
-namespace W3D
+namespace mz
 {
 class Device;
 class ImageView : public VulkanObject<vk::ImageView>
@@ -24,4 +24,4 @@ class ImageView : public VulkanObject<vk::ImageView>
 	const Device             &device_;
 	vk::ImageSubresourceRange subresource_range_;
 };
-}        // namespace W3D
+}        // namespace mz

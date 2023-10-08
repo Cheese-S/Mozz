@@ -1,7 +1,7 @@
 #pragma once
 
 #include "camera.hpp"
-namespace W3D::sg
+namespace mz::sg
 {
 class PerspectiveCamera : public Camera
 {
@@ -26,4 +26,4 @@ class PerspectiveCamera : public Camera
 	float zfar_         = 100.0f;
 	float znear_        = 0.1f;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

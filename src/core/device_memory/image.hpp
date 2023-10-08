@@ -4,7 +4,7 @@
 #include "core/device_memory/allocator.hpp"
 #include "core/device_memory/device_memory_object.hpp"
 
-namespace W3D
+namespace mz
 {
 
 template <typename T>
@@ -26,4 +26,4 @@ class Image : public DeviceMemoryObject<vk::Image>
 	vk::Extent3D base_extent_;
 	vk::Format   format_;
 };
-}        // namespace W3D
+}        // namespace mz

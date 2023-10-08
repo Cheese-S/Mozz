@@ -4,7 +4,7 @@
 
 #include "scene_graph/script.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 
 enum class AnimationType
@@ -97,4 +97,4 @@ class Animation : public Script
 	float                         end_time_{std::numeric_limits<float>::min()};
 };
 
-}        // namespace W3D::sg
+}        // namespace mz::sg

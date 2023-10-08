@@ -1,6 +1,6 @@
 #include "perspective_camera.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 PerspectiveCamera::PerspectiveCamera(const std::string &name) :
     Camera(name)
@@ -48,4 +48,4 @@ float PerspectiveCamera::get_aspect_ratio() const
 	return aspect_ratio_;
 }
 
-}        // namespace W3D::sg
+}        // namespace mz::sg

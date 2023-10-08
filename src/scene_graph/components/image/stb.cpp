@@ -2,7 +2,7 @@
 
 #include <stb_image.h>
 
-namespace W3D::sg
+namespace mz::sg
 {
 
 Stb::Stb(const std::string &name, const std::vector<uint8_t> &data) :
@@ -31,4 +31,4 @@ Stb::Stb(const std::string &name, const std::vector<uint8_t> &data) :
 	mipmaps_[0].extent.height = height;
 	mipmaps_[0].extent.depth  = 1u;
 }
-}        // namespace W3D::sg
+}        // namespace mz::sg

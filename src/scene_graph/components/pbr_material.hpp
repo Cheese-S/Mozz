@@ -5,7 +5,7 @@
 #include "common/vk_common.hpp"
 #include "scene_graph/components/material.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 
 enum class PBRMaterialFlagBits
@@ -32,4 +32,4 @@ class PBRMaterial : public Material
 	PBRMaterialFlag         flag;
 	vk::DescriptorSet       set;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

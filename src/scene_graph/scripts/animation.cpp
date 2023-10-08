@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace W3D::sg
+namespace mz::sg
 {
 
 inline glm::vec3 compute_cubic_spline(const std::vector<glm::vec3> &outputs, size_t i, float interp_val, float delta);
@@ -178,4 +178,4 @@ inline glm::quat compute_cubic_spline(const std::vector<glm::quat> &outputs, siz
 
 	return result;
 }
-}        // namespace W3D::sg
+}        // namespace mz::sg

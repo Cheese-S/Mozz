@@ -3,7 +3,7 @@
 #include "common/error.hpp"
 #include "core/image_view.hpp"
 
-namespace W3D
+namespace mz
 {
 
 Image::Image(Key<DeviceMemoryAllocator> key, VmaAllocator allocator, std::nullptr_t nptr) :
@@ -65,4 +65,4 @@ vk::Format Image::get_format()
 	return format_;
 }
 
-}        // namespace W3D
+}        // namespace mz

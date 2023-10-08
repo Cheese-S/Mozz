@@ -3,7 +3,7 @@
 #include "common/vk_common.hpp"
 #include "core/vulkan_object.hpp"
 
-namespace W3D
+namespace mz
 {
 class Device;
 
@@ -31,4 +31,4 @@ class Semaphore : public VulkanObject<vk::Semaphore>
 	Device &device_;
 };
 
-}        // namespace W3D
+}        // namespace mz

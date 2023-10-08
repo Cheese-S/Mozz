@@ -6,7 +6,7 @@
 #include "scene_graph/components/camera.hpp"
 #include "scene_graph/components/perspective_camera.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 const float FreeCamera::ROTATION_MOVE_WEIGHT = 4.8f;
 
@@ -128,4 +128,4 @@ void FreeCamera::resize(uint32_t width, uint32_t height)
 		}
 	}
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

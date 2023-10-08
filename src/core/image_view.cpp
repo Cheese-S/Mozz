@@ -2,7 +2,7 @@
 
 #include "device.hpp"
 
-namespace W3D
+namespace mz
 {
 
 vk::ImageViewCreateInfo ImageView::two_dim_view_cinfo(vk::Image image, vk::Format format, vk::ImageAspectFlags aspct_flags, uint32_t mip_levels)
@@ -82,4 +82,4 @@ const vk::ImageSubresourceRange &ImageView::get_subresource_range() const
 	return subresource_range_;
 }
 
-}        // namespace W3D
+}        // namespace mz

@@ -7,7 +7,7 @@
 extern const std::vector<const char *> VALIDATION_LAYERS;
 extern const std::vector<const char *> DEVICE_EXTENSIONS;
 
-namespace W3D
+namespace mz
 {
 class Window;
 class PhysicalDevice;
@@ -46,4 +46,4 @@ class Instance : public VulkanObject<vk::Instance>
 	vk::SurfaceKHR             surface_         = nullptr;
 	vk::DebugUtilsMessengerEXT debug_messenger_ = nullptr;
 };
-}        // namespace W3D
+}        // namespace mz

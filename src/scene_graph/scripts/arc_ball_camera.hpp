@@ -2,7 +2,7 @@
 
 #include "scene_graph/script.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 class AABB;
 class ArcBallCamera : public NodeScript
@@ -23,4 +23,4 @@ class ArcBallCamera : public NodeScript
 	glm::vec2                             scroll_delta_;
 	std::unordered_map<MouseButton, bool> mouse_button_pressed_;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

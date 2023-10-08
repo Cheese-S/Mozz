@@ -7,7 +7,7 @@
 
 int main()
 {
-	W3D::Renderer renderer;
+	mz::Renderer renderer;
 	try
 	{
 		renderer.start();

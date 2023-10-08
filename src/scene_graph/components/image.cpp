@@ -5,7 +5,7 @@
 #include "common/utils.hpp"
 #include "core/device.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 
 Image::Image(ImageResource &&resource, const std::string &name) :
@@ -38,7 +38,7 @@ void Image::set_resource(ImageResource &&resource)
 // std::unique_ptr<Image> Image::load(const std::string &name, const std::string &uri)
 // {
 // 	auto extension = fu::get_file_extension(uri);
-// 	auto data      = W3D::fu::read_binary(uri);
+// 	auto data      = mz::fu::read_binary(uri);
 // 	if (extension == "png" || extension == "jpg")
 // 	{
 // 		return std::make_unique<Stb>(name, data);
@@ -202,4 +202,4 @@ void Image::set_resource(ImageResource &&resource)
 // 	format_ = format;
 // }
 
-}        // namespace W3D::sg
+}        // namespace mz::sg

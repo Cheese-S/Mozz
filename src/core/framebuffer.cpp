@@ -7,7 +7,7 @@
 #include "render_pass.hpp"
 #include "swapchain.hpp"
 
-namespace W3D
+namespace mz
 {
 
 Framebuffer::Framebuffer(Device &device, vk::FramebufferCreateInfo framebuffer_cinfo) :
@@ -84,4 +84,4 @@ const vk::Framebuffer &SwapchainFramebuffer::get_handle(uint32_t idx) const
 {
 	return framebuffers_[idx];
 }
-}        // namespace W3D
+}        // namespace mz

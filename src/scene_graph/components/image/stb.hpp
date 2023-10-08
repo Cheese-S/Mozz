@@ -2,7 +2,7 @@
 
 #include "scene_graph/components/image.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 class Stb : public Image
 {
@@ -10,4 +10,4 @@ class Stb : public Image
 	Stb(const std::string &name, const std::vector<uint8_t> &data);
 	virtual ~Stb() = default;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

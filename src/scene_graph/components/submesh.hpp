@@ -9,7 +9,7 @@ namespace vk
 struct VertexInputAttributeDescription;
 }
 
-namespace W3D
+namespace mz
 {
 class Device;
 class Buffer;
@@ -53,4 +53,4 @@ class SubMesh : public Component
 };
 
 }        // namespace sg
-}        // namespace W3D
+}        // namespace mz

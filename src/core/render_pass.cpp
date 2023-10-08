@@ -4,7 +4,7 @@
 #include "device.hpp"
 #include "swapchain.hpp"
 
-namespace W3D
+namespace mz
 {
 
 vk::AttachmentDescription RenderPass::color_attachment(vk::Format format, vk::ImageLayout initial_layout, vk::ImageLayout final_layout)
@@ -55,4 +55,4 @@ RenderPass::~RenderPass()
 		device_.get_handle().destroyRenderPass(handle_);
 	}
 }
-}        // namespace W3D
+}        // namespace mz

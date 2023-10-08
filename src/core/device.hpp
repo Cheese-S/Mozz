@@ -6,7 +6,7 @@
 #include "device_memory/allocator.hpp"
 #include "vulkan_object.hpp"
 
-namespace W3D
+namespace mz
 {
 class Instance;
 class PhysicalDevice;
@@ -40,4 +40,4 @@ class Device : public VulkanObject<typename vk::Device>
 	vk::Queue                              compute_queue_  = nullptr;
 	std::unique_ptr<CommandPool>           p_one_time_buf_pool_;
 };
-}        // namespace W3D
+}        // namespace mz

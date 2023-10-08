@@ -4,7 +4,7 @@
 #include "core/device_memory/buffer.hpp"
 #include "material.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 
 std::array<vk::VertexInputAttributeDescription, 6> Vertex::get_input_attr_descriptions()
@@ -72,4 +72,4 @@ const Material *SubMesh::get_material() const
 	return p_material_;
 }
 
-}        // namespace W3D::sg
+}        // namespace mz::sg

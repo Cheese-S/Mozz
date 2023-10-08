@@ -14,7 +14,7 @@ class SurfaceKHR;
 struct Extent2D;
 }        // namespace vk
 
-namespace W3D
+namespace mz
 {
 class Renderer;
 class Instance;
@@ -42,4 +42,4 @@ class Window
   private:
 	GLFWwindow *handle_;
 };
-}        // namespace W3D
+}        // namespace mz

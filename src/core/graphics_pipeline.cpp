@@ -6,7 +6,7 @@
 #include "pipeline_layout.hpp"
 #include "render_pass.hpp"
 
-namespace W3D
+namespace mz
 {
 
 GraphicsPipeline::GraphicsPipeline(Device &device, RenderPass &render_pass, GraphicsPipelineState &state, vk::PipelineLayoutCreateInfo &pl_layout_cinfo) :
@@ -134,4 +134,4 @@ vk::PipelineLayout GraphicsPipeline::get_pipeline_layout()
 {
 	return pl_layout_;
 }
-}        // namespace W3D
+}        // namespace mz

@@ -9,7 +9,7 @@
 
 #include <set>
 
-namespace W3D
+namespace mz
 {
 const std::vector<const char *> Device::REQUIRED_EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -121,4 +121,4 @@ const DeviceMemoryAllocator &Device::get_device_memory_allocator() const
 	return *p_device_memory_allocator_;
 }
 
-}        // namespace W3D
+}        // namespace mz

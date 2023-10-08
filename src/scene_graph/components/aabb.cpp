@@ -2,7 +2,7 @@
 
 #include "glm/gtx/string_cast.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 AABB::AABB()
 {
@@ -101,4 +101,4 @@ std::string AABB::to_string() const
 {
 	return "Min: " + glm::to_string(min_) + ", Max: " + glm::to_string(max_);
 }
-}        // namespace W3D::sg
+}        // namespace mz::sg

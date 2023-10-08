@@ -3,7 +3,7 @@
 #include "common/glm_common.hpp"
 #include "scene_graph/component.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 class Node;
 class Camera : public Component
@@ -25,4 +25,4 @@ class Camera : public Component
 	Node     *pNode_{nullptr};
 	glm::mat4 pre_rotation_{1.0f};
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

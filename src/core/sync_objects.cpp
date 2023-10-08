@@ -2,7 +2,7 @@
 
 #include "device.hpp"
 
-namespace W3D
+namespace mz
 {
 Fence::Fence(Device &device, std::nullptr_t nptr) :
     device_(device)
@@ -51,4 +51,4 @@ Semaphore::~Semaphore()
 	}
 }
 
-}        // namespace W3D
+}        // namespace mz

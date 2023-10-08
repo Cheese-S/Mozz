@@ -2,7 +2,7 @@
 #include "common/glm_common.hpp"
 #include "scene_graph/component.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 class AABB : public Component
 {
@@ -28,4 +28,4 @@ class AABB : public Component
 	glm::vec3 min_;
 	glm::vec3 max_;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

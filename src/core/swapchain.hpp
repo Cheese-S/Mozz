@@ -4,7 +4,7 @@
 #include "vulkan_object.hpp"
 #include <memory>
 
-namespace W3D
+namespace mz
 {
 class Device;
 class Instance;
@@ -75,4 +75,4 @@ class Swapchain : public VulkanObject<vk::SwapchainKHR>
 	// std::vector<vk::raii::Framebuffer>      framebuffers_;
 	// AttachmentResource                      depthResource_;
 };
-}        // namespace W3D
+}        // namespace mz

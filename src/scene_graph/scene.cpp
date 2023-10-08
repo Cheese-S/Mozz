@@ -3,7 +3,7 @@
 #include "component.hpp"
 #include "node.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 Scene::Scene(const std::string &name) :
     name_(name)
@@ -103,4 +103,4 @@ bool Scene::has_component(const std::type_index &type) const
 {
 	return p_components_.count(type) > 0;
 }
-}        // namespace W3D::sg
+}        // namespace mz::sg

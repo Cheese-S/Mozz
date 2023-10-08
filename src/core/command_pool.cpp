@@ -4,7 +4,7 @@
 #include "common/utils.hpp"
 #include "device.hpp"
 
-namespace W3D
+namespace mz
 {
 CommandPool::CommandPool(Device &device, const vk::Queue &queue, uint32_t queue_family_index, CommandPoolResetStrategy strategy, vk::CommandPoolCreateFlags flags) :
     device_(device),
@@ -114,4 +114,4 @@ const vk::Queue &CommandPool::get_queue()
 {
 	return queue_;
 }
-}        // namespace W3D
+}        // namespace mz

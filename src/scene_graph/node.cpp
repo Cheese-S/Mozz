@@ -1,6 +1,6 @@
 #include "node.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 Node::Node(const size_t id, const std::string &name) :
     id_(id),
@@ -68,4 +68,4 @@ bool Node::has_component(const std::type_index index)
 {
 	return components_.count(index) > 0;
 }
-}        // namespace W3D::sg
+}        // namespace mz::sg

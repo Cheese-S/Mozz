@@ -5,7 +5,7 @@
 #include "glm/gtx/string_cast.hpp"
 #include "scene_graph/scene.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 Skin::Skin(const std::string &name) :
     Component(name){};
@@ -37,4 +37,4 @@ std::array<glm::mat4, Skin::MAX_NUM_JOINTS> &Skin::get_IBMs()
 	return IBMs_;
 }
 
-}        // namespace W3D::sg
+}        // namespace mz::sg

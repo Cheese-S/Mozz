@@ -3,7 +3,7 @@
 #include <string>
 #include <typeindex>
 
-namespace W3D
+namespace mz
 {
 namespace sg
 {
@@ -22,4 +22,4 @@ class Component
 };
 
 }        // namespace sg
-}        // namespace W3D
+}        // namespace mz

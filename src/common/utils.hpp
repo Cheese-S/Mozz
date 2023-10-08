@@ -10,7 +10,7 @@ struct Extent3D;
 enum class Format;
 };        // namespace vk
 
-namespace W3D
+namespace mz
 {
 
 namespace sg
@@ -86,4 +86,4 @@ constexpr uint32_t string_hash(const char *s)
 
 uint32_t max_mip_levels(uint32_t width, uint32_t height);
 
-}        // namespace W3D
+}        // namespace mz

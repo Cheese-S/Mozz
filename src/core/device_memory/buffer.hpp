@@ -3,7 +3,7 @@
 #include "core/device_memory/device_memory_object.hpp"
 #include "core/vulkan_object.hpp"
 
-namespace W3D
+namespace mz
 {
 
 template <typename T>
@@ -33,4 +33,4 @@ class Buffer : public DeviceMemoryObject<vk::Buffer>
 	void *p_mapped_data_ = nullptr;
 };
 
-}        // namespace W3D
+}        // namespace mz

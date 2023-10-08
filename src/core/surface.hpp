@@ -3,7 +3,7 @@
 #include "common/vk_common.hpp"
 #include "vulkan_object.hpp"
 
-namespace W3D
+namespace mz
 {
 class Instance;
 class Window;
@@ -17,4 +17,4 @@ class Surface : VulkanObject<vk::SurfaceKHR>
   private:
 	Instance &instance_;
 };
-}        // namespace W3D
+}        // namespace mz

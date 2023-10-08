@@ -1,6 +1,6 @@
 #pragma once
 
-namespace W3D
+namespace mz
 {
 template <typename THandle>
 class VulkanObject
@@ -28,4 +28,4 @@ class VulkanObject
   protected:
 	THandle handle_ = nullptr;
 };
-}        // namespace W3D
+}        // namespace mz

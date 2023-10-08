@@ -2,7 +2,7 @@
 
 #include "scene_graph/component.hpp"
 
-namespace W3D
+namespace mz
 {
 
 class ImageResource;
@@ -27,4 +27,4 @@ class Texture : public Component
 };
 }        // namespace sg
 
-};        // namespace W3D
+};        // namespace mz

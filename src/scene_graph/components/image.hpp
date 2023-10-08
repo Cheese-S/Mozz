@@ -6,7 +6,7 @@
 #include "core/image_resource.hpp"
 #include "scene_graph/component.hpp"
 
-namespace W3D
+namespace mz
 {
 
 class Device;
@@ -32,4 +32,4 @@ class Image : public Component
 };
 }        // namespace sg
 
-}        // namespace W3D
+}        // namespace mz

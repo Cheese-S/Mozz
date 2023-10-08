@@ -5,7 +5,7 @@
 #include "common/glm_common.hpp"
 #include "scene_graph/component.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 enum class AlphaMode
 {
@@ -29,4 +29,4 @@ class Material : public Component
 	float     alpha_cutoff_{0.5f};
 	AlphaMode alpha_mode_{AlphaMode::Opaque};
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

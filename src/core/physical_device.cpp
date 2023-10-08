@@ -4,7 +4,7 @@
 
 #include "instance.hpp"
 
-namespace W3D
+namespace mz
 {
 PhysicalDevice::PhysicalDevice(vk::PhysicalDevice handle, Instance &instance) :
     VulkanObject(handle),
@@ -99,4 +99,4 @@ uint32_t PhysicalDevice::get_compute_queue_family_index() const
 	return indices_.compute_index.value();
 }
 
-}        // namespace W3D
+}        // namespace mz

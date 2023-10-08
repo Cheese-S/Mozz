@@ -8,7 +8,7 @@
 #include "core/device.hpp"
 #include "core/image_view.hpp"
 
-namespace W3D
+namespace mz
 {
 
 uint8_t ImageResource::format_to_bits_per_pixel(vk::Format format)
@@ -55,7 +55,7 @@ ImageTransferInfo stb_load(const std::string &path)
 	std::string extension = fu::get_file_extension(path);
 	if (extension != "jpg" || extension != "png")
 	{
-		LOGE("Unsupported file type! W3D only supports loading jpg/png 2d images");
+		LOGE("Unsupported file type! Mozz only supports loading jpg/png 2d images");
 		abort();
 	}
 
@@ -131,7 +131,7 @@ ImageTransferInfo gli_load(const std::string &path)
 	std::string extension = fu::get_file_extension(path);
 	if (extension != "dds")
 	{
-		LOGE("Unsupported file type! W3D only supports loading .dds cubic images");
+		LOGE("Unsupported file type! Mozz only supports loading .dds cubic images");
 		abort();
 	}
 
@@ -195,4 +195,4 @@ const ImageView &ImageResource::get_view() const
 {
 	return view_;
 }
-};        // namespace W3D
+};        // namespace mz

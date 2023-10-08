@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <type_traits>
 
-namespace W3D
+namespace mz
 {
 template <typename T>
 class BitFlags
@@ -66,4 +66,4 @@ class BitFlags
   private:
 	FlagType flag_;
 };
-}        // namespace W3D
+}        // namespace mz

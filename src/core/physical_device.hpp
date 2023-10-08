@@ -5,7 +5,7 @@
 
 #include <optional>
 
-namespace W3D
+namespace mz
 {
 class Instance;
 
@@ -53,4 +53,4 @@ class PhysicalDevice : public VulkanObject<typename vk::PhysicalDevice>
 	vk::PhysicalDeviceProperties properties_;
 	QueueFamilyIndices           indices_;
 };
-}        // namespace W3D
+}        // namespace mz

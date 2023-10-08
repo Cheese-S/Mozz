@@ -6,7 +6,7 @@
 #include "scene_graph/component.hpp"
 #include "scene_graph/node.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 class SubMesh;
 class Mesh : public Component
@@ -29,4 +29,4 @@ class Mesh : public Component
 	std::vector<SubMesh *> p_submeshs;
 	std::vector<Node *>    p_nodes;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg

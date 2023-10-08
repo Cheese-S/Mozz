@@ -4,7 +4,7 @@
 
 #include "scene_graph/node.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 Transform::Transform(Node &node) :
     node_(node)
@@ -96,4 +96,4 @@ void Transform::invalidate_world_M()
 	}
 }
 
-}        // namespace W3D::sg
+}        // namespace mz::sg

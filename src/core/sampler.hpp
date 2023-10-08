@@ -3,7 +3,7 @@
 #include "common/vk_common.hpp"
 #include "core/vulkan_object.hpp"
 
-namespace W3D
+namespace mz
 {
 class Device;
 class PhysicalDevice;
@@ -21,4 +21,4 @@ class Sampler : public VulkanObject<vk::Sampler>
   private:
 	const Device &device_;
 };
-}        // namespace W3D
+}        // namespace mz

@@ -11,8 +11,7 @@
 #include "scene_graph/scripts/arc_ball_camera.hpp"
 #include "scene_graph/scripts/free_camera.hpp"
 
-
-namespace W3D
+namespace mz
 {
 std::string to_snake_case(const std::string &text)
 {
@@ -103,4 +102,4 @@ uint32_t max_mip_levels(uint32_t width, uint32_t height)
 	return levels;
 }
 
-}        // namespace W3D
+}        // namespace mz

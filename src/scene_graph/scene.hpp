@@ -11,7 +11,7 @@
 #include "scene_graph/components/aabb.hpp"
 #include "scene_graph/node.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 
 class Node;
@@ -101,4 +101,4 @@ class Scene
 	std::unordered_map<std::type_index, std::vector<std::unique_ptr<Component>>> p_components_;
 };
 
-}        // namespace W3D::sg
+}        // namespace mz::sg

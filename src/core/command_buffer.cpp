@@ -6,7 +6,7 @@
 #include "core/image_view.hpp"
 #include "device_memory/buffer.hpp"
 
-namespace W3D
+namespace mz
 {
 
 CommandBuffer::CommandBuffer(vk::CommandBuffer handle, CommandPool &pool, vk::CommandBufferLevel level) :
@@ -195,4 +195,4 @@ void CommandBuffer::copy_buffer(Buffer &src, Buffer &dst, vk::BufferCopy copy_re
 	handle_.copyBuffer(src.get_handle(), dst.get_handle(), copy_region);
 }
 
-}        // namespace W3D
+}        // namespace mz

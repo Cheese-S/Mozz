@@ -3,7 +3,7 @@
 #include "instance.hpp"
 #include "window.hpp"
 
-namespace W3D
+namespace mz
 {
 Surface::Surface(Instance &instance, Window &window) :
     instance_(instance)
@@ -16,4 +16,4 @@ Surface::~Surface()
 	instance_.get_handle().destroySurfaceKHR(handle_);
 }
 
-}        // namespace W3D
+}        // namespace mz

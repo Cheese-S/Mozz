@@ -3,7 +3,7 @@
 #include "common/error.hpp"
 #include "scene_graph/node.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 Camera::Camera(const std::string &name) :
     Component(name)
@@ -45,4 +45,4 @@ const glm::mat4 Camera::get_pre_rotation()
 	return pre_rotation_;
 }
 
-}        // namespace W3D::sg
+}        // namespace mz::sg

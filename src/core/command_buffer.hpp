@@ -2,7 +2,7 @@
 #include "common/vk_common.hpp"
 #include "core/vulkan_object.hpp"
 
-namespace W3D
+namespace mz
 {
 class Buffer;
 class Image;
@@ -38,4 +38,4 @@ class CommandBuffer : public VulkanObject<vk::CommandBuffer>
 	CommandPool           &pool_;
 	vk::CommandBufferLevel level_;
 };
-}        // namespace W3D
+}        // namespace mz

@@ -8,7 +8,7 @@
 #include "buffer.hpp"
 #include "image.hpp"
 
-namespace W3D
+namespace mz
 {
 DeviceMemoryAllocator::DeviceMemoryAllocator(Device &device)
 {
@@ -102,4 +102,4 @@ Image DeviceMemoryAllocator::allocate_null_image() const
 	return Image(Key<DeviceMemoryAllocator>{}, handle_, nullptr);
 };
 
-}        // namespace W3D
+}        // namespace mz

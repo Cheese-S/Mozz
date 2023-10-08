@@ -5,7 +5,7 @@
 #include "common/glm_common.hpp"
 #include "scene_graph/component.hpp"
 
-namespace W3D::sg
+namespace mz::sg
 {
 class Node;
 class Transform : public Component
@@ -39,4 +39,4 @@ class Transform : public Component
 
 	bool need_update_ = false;
 };
-}        // namespace W3D::sg
+}        // namespace mz::sg
