@@ -6,6 +6,7 @@
 
 namespace mz
 {
+
 PhysicalDevice::PhysicalDevice(vk::PhysicalDevice handle, Instance &instance) :
     VulkanObject(handle),
     instance_(instance)
@@ -15,15 +16,6 @@ PhysicalDevice::PhysicalDevice(vk::PhysicalDevice handle, Instance &instance) :
 		find_queue_familiy_indices();
 	};
 };
-
-PhysicalDevice::PhysicalDevice(PhysicalDevice &&rhs) :
-    VulkanObject(std::move(rhs)),
-    instance_(rhs.instance_),
-    features_(std::move(rhs.features_)),
-    properties_(std::move(rhs.properties_)),
-    indices_(std::move(rhs.indices_))
-{
-}
 
 bool PhysicalDevice::is_all_extensions_supported(const std::vector<const char *> &required_extensions) const
 {

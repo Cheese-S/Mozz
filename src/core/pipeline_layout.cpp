@@ -5,11 +5,6 @@
 namespace mz
 {
 
-PipelineLayout::PipelineLayout(Device &device, std::nullptr_t nptr) :
-    device_(device)
-{
-}
-
 PipelineLayout::PipelineLayout(Device &device, vk::PipelineLayoutCreateInfo &pipeline_layout_cinfo) :
     device_(device)
 {

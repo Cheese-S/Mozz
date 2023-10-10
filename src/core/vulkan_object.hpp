@@ -26,6 +26,6 @@ class VulkanObject
 	}
 
   protected:
-	THandle handle_ = nullptr;
+	THandle handle_;
 };
 }        // namespace mz

@@ -11,6 +11,7 @@
 #include "common/file_utils.hpp"
 #include "common/utils.hpp"
 #include "core/command_buffer.hpp"
+#include "core/context.hpp"
 #include "core/device.hpp"
 #include "core/device_memory/buffer.hpp"
 #include "core/image_view.hpp"
@@ -68,8 +69,8 @@ struct TypeCast
 	}
 };
 
-GLTFLoader::GLTFLoader(Device const &device) :
-    device_(device)
+GLTFLoader::GLTFLoader(const Context &ctx) :
+    ctx_(ctx)
 {
 }
 
@@ -204,12 +205,12 @@ std::unique_ptr<sg::Sampler> GLTFLoader::parse_sampler(
 	    .addressModeU  = address_mode_u,
 	    .addressModeV  = address_mode_v,
 	    .addressModeW  = address_mode_w,
-	    .maxAnisotropy = device_.get_physical_device().get_handle().getProperties().limits.maxSamplerAnisotropy,
+	    .maxAnisotropy = ctx_.physical_device.get_handle().getProperties().limits.maxSamplerAnisotropy,
 	    .maxLod        = std::numeric_limits<float>::max(),
 	    .borderColor   = vk::BorderColor::eIntOpaqueWhite,
 	};
 
-	return std::make_unique<sg::Sampler>(device_, name, sampler_cinfo);
+	return std::make_unique<sg::Sampler>(ctx_.device, name, sampler_cinfo);
 }
 
 std::unique_ptr<sg::Sampler> GLTFLoader::create_default_sampler() const
@@ -262,7 +263,7 @@ std::unique_ptr<sg::Image> GLTFLoader::parse_image(const tinygltf::Image &gltf_i
 	}
 
 	return std::make_unique<sg::Image>(
-	    ImageResource(device_, nullptr),
+	    ImageResource(ctx_.device, nullptr),
 	    gltf_image.name);
 }
 
@@ -272,12 +273,12 @@ void GLTFLoader::batch_upload_images() const
 
 	size_t i = 0;
 	// we ignore the last image b/c it's the default image we've created for default texture.
-	size_t count = p_images.size() - 1;
-
+	size_t        count  = p_images.size() - 1;
+	const Device &device = ctx_.device;
 	while (i < count)
 	{
 		std::vector<Buffer> staging_bufs;
-		CommandBuffer       cmd_buf    = device_.begin_one_time_buf();
+		CommandBuffer       cmd_buf    = device.begin_one_time_buf();
 		size_t              batch_size = 0;
 
 		while (i < count && batch_size < 64 * 1024 * 1024)
@@ -289,7 +290,7 @@ void GLTFLoader::batch_upload_images() const
 			create_image_resource(*p_image, i);
 
 			batch_size += img_size;
-			staging_bufs.emplace_back(device_.get_device_memory_allocator().allocate_staging_buffer(img_size));
+			staging_bufs.emplace_back(device.get_device_memory_allocator().allocate_staging_buffer(img_size));
 
 			staging_bufs.back().update(img_tinfo.binary);
 
@@ -301,7 +302,7 @@ void GLTFLoader::batch_upload_images() const
 
 			i++;
 		}
-		device_.end_one_time_buf(cmd_buf);
+		device.end_one_time_buf(cmd_buf);
 	}
 };
 
@@ -320,11 +321,11 @@ void GLTFLoader::create_image_resource(sg::Image &image, size_t idx) const
 	         .sharingMode = vk::SharingMode::eExclusive,
     };
 
-	Image vk_image = device_.get_device_memory_allocator().allocate_device_only_image(img_cinfo);
+	Image vk_image = ctx_.device.get_device_memory_allocator().allocate_device_only_image(img_cinfo);
 
 	vk::ImageViewCreateInfo view_cinfo = ImageView::two_dim_view_cinfo(vk_image.get_handle(), img_cinfo.format, vk::ImageAspectFlagBits::eColor, img_cinfo.mipLevels);
 
-	image.set_resource(ImageResource(std::move(vk_image), ImageView(device_, view_cinfo)));
+	image.set_resource(ImageResource(std::move(vk_image), ImageView(ctx_.device, view_cinfo)));
 }
 
 void GLTFLoader::load_textures()
@@ -386,23 +387,23 @@ std::unique_ptr<sg::Image> GLTFLoader::create_default_texture_image() const
 	    .sharingMode = vk::SharingMode::eExclusive,
 	};
 
-	Image img = device_.get_device_memory_allocator().allocate_device_only_image(image_cinfo);
+	Image img = ctx_.device.get_device_memory_allocator().allocate_device_only_image(image_cinfo);
 
 	vk::ImageViewCreateInfo view_cinfo = ImageView::two_dim_view_cinfo(img.get_handle(), image_cinfo.format, vk::ImageAspectFlagBits::eColor, 1);
-	ImageResource           resource   = ImageResource(std::move(img), ImageView(device_, view_cinfo));
+	ImageResource           resource   = ImageResource(std::move(img), ImageView(ctx_.device, view_cinfo));
 
 	std::vector<uint8_t> binary = {0u, 0u, 0u, 0u};
 
-	Buffer staging_buf = device_.get_device_memory_allocator().allocate_staging_buffer(binary.size());
+	Buffer staging_buf = ctx_.device.get_device_memory_allocator().allocate_staging_buffer(binary.size());
 	staging_buf.update(binary);
 
-	CommandBuffer cmd_buf = device_.begin_one_time_buf();
+	CommandBuffer cmd_buf = ctx_.device.begin_one_time_buf();
 
 	cmd_buf.set_image_layout(resource, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, vk::PipelineStageFlagBits::eHost, vk::PipelineStageFlagBits::eTransfer);
 	cmd_buf.update_image(resource, staging_buf);
 	cmd_buf.set_image_layout(resource, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader);
 
-	device_.end_one_time_buf(cmd_buf);
+	ctx_.device.end_one_time_buf(cmd_buf);
 
 	return std::make_unique<sg::Image>(std::move(resource), "default_image");
 }
@@ -588,10 +589,10 @@ std::unique_ptr<sg::SubMesh> GLTFLoader::parse_submesh(sg::Mesh *p_mesh, const t
 	}
 
 	size_t vertex_buf_size    = vertexs.size() * sizeof(sg::Vertex);
-	Buffer vertex_staging_buf = device_.get_device_memory_allocator().allocate_staging_buffer(vertex_buf_size);
-	Buffer vertex_buf         = device_.get_device_memory_allocator().allocate_vertex_buffer(vertex_buf_size);
+	Buffer vertex_staging_buf = ctx_.device.get_device_memory_allocator().allocate_staging_buffer(vertex_buf_size);
+	Buffer vertex_buf         = ctx_.device.get_device_memory_allocator().allocate_vertex_buffer(vertex_buf_size);
 	vertex_staging_buf.update(vertexs.data(), vertex_buf_size);
-	CommandBuffer cmd_buf = device_.begin_one_time_buf();
+	CommandBuffer cmd_buf = ctx_.device.begin_one_time_buf();
 	cmd_buf.copy_buffer(vertex_staging_buf, vertex_buf, vertex_buf_size);
 	p_submesh->p_vertex_buf_ = std::make_unique<Buffer>(std::move(vertex_buf));
 	transient_bufs.push_back(std::move(vertex_staging_buf));
@@ -623,15 +624,15 @@ std::unique_ptr<sg::SubMesh> GLTFLoader::parse_submesh(sg::Mesh *p_mesh, const t
 				break;
 		}
 
-		Buffer idx_staging_buf = device_.get_device_memory_allocator().allocate_staging_buffer(indexs.size());
-		Buffer idx_buf         = device_.get_device_memory_allocator().allocate_index_buffer(indexs.size());
+		Buffer idx_staging_buf = ctx_.device.get_device_memory_allocator().allocate_staging_buffer(indexs.size());
+		Buffer idx_buf         = ctx_.device.get_device_memory_allocator().allocate_index_buffer(indexs.size());
 		idx_staging_buf.update(indexs);
 		cmd_buf.copy_buffer(idx_staging_buf, idx_buf, indexs.size());
 		transient_bufs.push_back(std::move(idx_staging_buf));
 		p_submesh->p_idx_buf_ = std::make_unique<Buffer>(std::move(idx_buf));
 	}
 
-	device_.end_one_time_buf(cmd_buf);
+	ctx_.device.end_one_time_buf(cmd_buf);
 	return std::move(p_submesh);
 }
 

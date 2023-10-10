@@ -7,6 +7,8 @@
 
 namespace mz
 {
+class Instance;
+class PhysicalDevice;
 class Device;
 class Image;
 class Buffer;
@@ -14,7 +16,7 @@ class Buffer;
 class DeviceMemoryAllocator : public VulkanObject<VmaAllocator>
 {
   public:
-	DeviceMemoryAllocator(Device &device);
+	DeviceMemoryAllocator(Instance &instance, PhysicalDevice &physical_device, Device &device);
 	~DeviceMemoryAllocator();
 
 	Buffer allocate_staging_buffer(size_t size) const;

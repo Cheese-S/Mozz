@@ -36,7 +36,7 @@ class PhysicalDevice : public VulkanObject<typename vk::PhysicalDevice>
 	PhysicalDevice(const PhysicalDevice &)            = delete;
 	PhysicalDevice &operator=(const PhysicalDevice &) = delete;
 	PhysicalDevice &operator=(PhysicalDevice &&)      = delete;
-	PhysicalDevice(PhysicalDevice &&);
+	PhysicalDevice(PhysicalDevice &&)                 = default;
 	bool is_all_extensions_supported(const std::vector<const char *> &required_extensions) const;
 
 	SwapchainSupportDetails   get_swapchain_support_details() const;
@@ -48,9 +48,7 @@ class PhysicalDevice : public VulkanObject<typename vk::PhysicalDevice>
   private:
 	void find_queue_familiy_indices();
 
-	Instance                    &instance_;
-	vk::PhysicalDeviceFeatures   features_;
-	vk::PhysicalDeviceProperties properties_;
-	QueueFamilyIndices           indices_;
+	Instance          &instance_;
+	QueueFamilyIndices indices_;
 };
 }        // namespace mz

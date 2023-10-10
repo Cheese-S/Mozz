@@ -12,6 +12,7 @@
 #include "common/utils.hpp"
 
 #include "core/command_pool.hpp"
+#include "core/context.hpp"
 #include "core/descriptor_allocator.hpp"
 #include "core/device.hpp"
 #include "core/framebuffer.hpp"
@@ -36,23 +37,32 @@
 
 namespace mz
 {
-const uint32_t Renderer::NUM_INFLIGHT_FRAMES  = 2;
-const uint32_t Renderer::IRRADIANCE_DIMENSION = 2;
+const uint32_t Renderer::NUM_INFLIGHT_FRAMES = 2;
 
 Renderer::Renderer()
 {
 	p_window_ = std::make_unique<Window>("Wolfie3D");
 	p_window_->register_callbacks(*this);
-	p_instance_         = std::make_unique<Instance>("Wolfie3D", *p_window_);
-	p_physical_device_  = p_instance_->pick_physical_device();
-	p_device_           = std::make_unique<Device>(*p_instance_, *p_physical_device_);
-	p_descriptor_state_ = std::make_unique<DescriptorState>(*p_device_);
-	p_cmd_pool_         = std::make_unique<CommandPool>(*p_device_, p_device_->get_graphics_queue(), p_physical_device_->get_graphics_queue_family_index());
-	p_swapchain_        = std::make_unique<Swapchain>(*p_device_, p_window_->get_extent());
-	load_scene("2.0/Box/glTF/Box.gltf");
+
+	ContextCreateInfo ctx_cinfo{
+	    .app_name          = "Wolfie3D",
+	    .device_extensions = {},
+	    .window            = *p_window_,
+	};
+
+	for (const char *extension_name : Device::REQUIRED_EXTENSIONS)
+	{
+		ctx_cinfo.device_extensions.push_back(extension_name);
+	}
+
+	p_ctx_              = std::make_unique<Context>(ctx_cinfo);
+	p_descriptor_state_ = std::make_unique<DescriptorState>(p_ctx_->device);
+	p_cmd_pool_         = std::make_unique<CommandPool>(p_ctx_->device, p_ctx_->device.get_graphics_queue(), p_ctx_->physical_device.get_graphics_queue_family_index());
+	p_swapchain_        = std::make_unique<Swapchain>(*p_ctx_, p_window_->get_extent());
+	load_scene("2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
 	create_pbr_resources();
 	create_rendering_resources();
-	p_sframe_buffer_ = std::make_unique<SwapchainFramebuffer>(*p_device_, *p_swapchain_, *p_render_pass_);
+	p_sframe_buffer_ = std::make_unique<SwapchainFramebuffer>(p_ctx_->device, *p_swapchain_, *p_render_pass_);
 }
 
 Renderer::~Renderer(){};
@@ -72,7 +82,7 @@ void Renderer::main_loop()
 		update();
 		p_window_->poll_events();
 	}
-	p_device_->get_handle().waitIdle();
+	p_ctx_->device.get_handle().waitIdle();
 }
 
 void Renderer::update()
@@ -101,7 +111,7 @@ void Renderer::render_frame()
 uint32_t Renderer::sync_acquire_next_image()
 {
 	FrameResource &frame    = get_current_frame_resource();
-	vk::Device     device_h = p_device_->get_handle();
+	vk::Device     device_h = p_ctx_->device.get_handle();
 	uint32_t       img_idx;
 
 	while (true)
@@ -150,7 +160,7 @@ void Renderer::sync_submit_commands()
 	            .signalSemaphoreCount = 1,
 	            .pSignalSemaphores    = &frame.render_finished_semaphore.get_handle(),
     };
-	p_device_->get_graphics_queue().submit(submit_info, frame.in_flight_fence.get_handle());
+	p_ctx_->device.get_graphics_queue().submit(submit_info, frame.in_flight_fence.get_handle());
 }
 
 void Renderer::sync_present(uint32_t img_idx)
@@ -167,7 +177,7 @@ void Renderer::sync_present(uint32_t img_idx)
 	// Same reasoing as sync_acquire.
 	// See, https://github.com/KhronosGroup/Vulkan-Hpp/issues/599
 	vk::Result present_res = static_cast<vk::Result>(
-	    vkQueuePresentKHR(p_device_->get_present_queue(), reinterpret_cast<VkPresentInfoKHR *>(&present_info)));
+	    vkQueuePresentKHR(p_ctx_->device.get_present_queue(), reinterpret_cast<VkPresentInfoKHR *>(&present_info)));
 
 	if (present_res == vk::Result::eErrorOutOfDateKHR || present_res == vk::Result::eSuboptimalKHR || is_window_resized_)
 	{
@@ -184,7 +194,7 @@ void Renderer::sync_present(uint32_t img_idx)
 void Renderer::resize()
 {
 	vk::Extent2D extent = p_window_->wait_for_non_zero_extent();
-	p_device_->get_handle().waitIdle();
+	p_ctx_->device.get_handle().waitIdle();
 	p_swapchain_->rebuild(p_window_->get_extent());
 	p_sframe_buffer_->rebuild();
 	p_camera_node_->get_component<sg::Script>().resize(extent.width, extent.height);
@@ -427,7 +437,7 @@ void Renderer::process_event(const Event &event)
 
 void Renderer::load_scene(const char *scene_name)
 {
-	GLTFLoader loader(*p_device_);
+	GLTFLoader loader(*p_ctx_);
 	p_scene_ = loader.read_scene_from_file(scene_name);
 
 	vk::Extent2D window_extent = p_window_->get_extent();
@@ -436,7 +446,7 @@ void Renderer::load_scene(const char *scene_name)
 
 void Renderer::create_pbr_resources()
 {
-	PBRBaker baker(*p_device_);
+	PBRBaker baker(*p_ctx_);
 	baked_pbr_ = baker.bake();
 }
 
@@ -450,15 +460,16 @@ void Renderer::create_rendering_resources()
 
 void Renderer::create_frame_resources()
 {
+	Device &device = p_ctx_->device;
 	for (uint32_t i = 0; i < NUM_INFLIGHT_FRAMES; i++)
 	{
 		frame_resources_.push_back({
 		    .cmd_buf                   = std::move(p_cmd_pool_->allocate_command_buffer()),
-		    .camera_buf                = std::move(p_device_->get_device_memory_allocator().allocate_uniform_buffer(sizeof(CameraUBO))),
-		    .joint_buf                 = std::move(p_device_->get_device_memory_allocator().allocate_uniform_buffer(sizeof(JointUBO))),
-		    .image_avaliable_semaphore = std::move(Semaphore(*p_device_)),
-		    .render_finished_semaphore = std::move(Semaphore(*p_device_)),
-		    .in_flight_fence           = std::move(Fence(*p_device_, vk::FenceCreateFlagBits::eSignaled)),
+		    .camera_buf                = std::move(device.get_device_memory_allocator().allocate_uniform_buffer(sizeof(CameraUBO))),
+		    .joint_buf                 = std::move(device.get_device_memory_allocator().allocate_uniform_buffer(sizeof(JointUBO))),
+		    .image_avaliable_semaphore = std::move(Semaphore(device)),
+		    .render_finished_semaphore = std::move(Semaphore(device)),
+		    .in_flight_fence           = std::move(Fence(device, vk::FenceCreateFlagBits::eSignaled)),
 		});
 	}
 }
@@ -628,7 +639,7 @@ void Renderer::create_render_pass()
 	    .pDependencies   = &dependency,
 	};
 
-	p_render_pass_ = std::make_unique<RenderPass>(*p_device_, render_pass_cinfo);
+	p_render_pass_ = std::make_unique<RenderPass>(p_ctx_->device, render_pass_cinfo);
 }
 
 void Renderer::create_pipeline_resources()
@@ -661,7 +672,7 @@ void Renderer::create_pipeline_resources()
 	    .pPushConstantRanges    = pbr_push_const_ranges.data(),
 	};
 
-	pbr_.p_pl = std::make_unique<GraphicsPipeline>(*p_device_, *p_render_pass_, pl_state, pbr_pl_layout_cinfo);
+	pbr_.p_pl = std::make_unique<GraphicsPipeline>(p_ctx_->device, *p_render_pass_, pl_state, pbr_pl_layout_cinfo);
 
 	vk::PushConstantRange skybox_push_const_range{
 	    .stageFlags = vk::ShaderStageFlagBits::eVertex,
@@ -679,7 +690,7 @@ void Renderer::create_pipeline_resources()
 	pl_state.rasterization_state.cull_mode          = vk::CullModeFlagBits::eFront;
 	pl_state.depth_stencil_state.depth_test_enable  = false;
 	pl_state.depth_stencil_state.depth_write_enable = false;
-	skybox_.p_pl                                    = std::make_unique<GraphicsPipeline>(*p_device_, *p_render_pass_, pl_state, skybox_pl_layout_cinfo);
+	skybox_.p_pl                                    = std::make_unique<GraphicsPipeline>(p_ctx_->device, *p_render_pass_, pl_state, skybox_pl_layout_cinfo);
 }
 
 }        // namespace mz

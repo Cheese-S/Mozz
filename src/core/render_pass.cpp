@@ -37,11 +37,6 @@ vk::AttachmentDescription RenderPass::depth_attachment(vk::Format format, vk::Im
 	return depth_attachment;
 };
 
-RenderPass::RenderPass(Device &device, std::nullptr_t nptr) :
-    device_(device)
-{
-}
-
 RenderPass::RenderPass(Device &device, vk::RenderPassCreateInfo render_pass_cinfo) :
     device_(device)
 {

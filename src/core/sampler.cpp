@@ -26,11 +26,6 @@ vk::SamplerCreateInfo Sampler::linear_clamp_cinfo(const PhysicalDevice &physical
 	return sampler_cinfo;
 }
 
-Sampler::Sampler(const Device &device, std::nullptr_t nptr) :
-    device_(device)
-{
-}
-
 Sampler::Sampler(const Device &device, vk::SamplerCreateInfo &sampler_cinfo) :
     device_(device)
 {

@@ -8,12 +8,7 @@
 
 namespace mz
 {
-class Device;
-
-namespace DeviceMemory
-{
-class Allocator;
-}
+class Context;
 
 namespace sg
 {
@@ -40,7 +35,7 @@ class GLTFLoader
   public:
 	static const glm::vec3 MZ_CONVERSION_SCALE;
 
-	GLTFLoader(Device const &device);
+	GLTFLoader(const Context &ctx);
 	virtual ~GLTFLoader() = default;
 	std::unique_ptr<sg::Scene>   read_scene_from_file(const std::string &file_name,
 	                                                  int                scene_index = -1);
@@ -132,7 +127,7 @@ class GLTFLoader
 		};
 	}
 
-	const Device                  &device_;
+	const Context                 &ctx_;
 	sg::Scene                     *p_scene_;
 	tinygltf::Model                gltf_model_;
 	std::string                    model_path_;

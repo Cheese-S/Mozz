@@ -19,13 +19,11 @@ class Device : public VulkanObject<typename vk::Device>
   public:
 	static const std::vector<const char *> REQUIRED_EXTENSIONS;
 
-	Device(Instance &instance, PhysicalDevice &physical_device);
+	Device(Instance &instance, PhysicalDevice &physical_device, const std::vector<const char *> &device_extensions);
 	~Device() override;
 	CommandBuffer begin_one_time_buf() const;
 	void          end_one_time_buf(CommandBuffer &cmd_buf) const;
 
-	const Instance              &get_instance() const;
-	const PhysicalDevice        &get_physical_device() const;
 	const vk::Queue             &get_graphics_queue() const;
 	const vk::Queue             &get_present_queue() const;
 	const vk::Queue             &get_compute_queue() const;
@@ -33,7 +31,6 @@ class Device : public VulkanObject<typename vk::Device>
 
   private:
 	Instance                              &instance_;
-	PhysicalDevice                        &physical_device_;
 	std::unique_ptr<DeviceMemoryAllocator> p_device_memory_allocator_;
 	vk::Queue                              graphics_queue_ = nullptr;
 	vk::Queue                              present_queue_  = nullptr;

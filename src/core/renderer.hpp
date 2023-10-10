@@ -22,9 +22,7 @@ class Camera;
 }        // namespace sg
 
 class Window;
-class Instance;
-class PhysicalDevice;
-class Device;
+class Context;
 class Swapchain;
 class RenderPass;
 class SwapchainFramebuffer;
@@ -44,7 +42,6 @@ class Renderer
 
   private:
 	static const uint32_t NUM_INFLIGHT_FRAMES;
-	static const uint32_t IRRADIANCE_DIMENSION;
 
 	struct FrameResource
 	{
@@ -132,9 +129,7 @@ class Renderer
 	void create_pipeline_resources();
 
 	std::unique_ptr<Window>               p_window_;
-	std::unique_ptr<Instance>             p_instance_;
-	std::unique_ptr<PhysicalDevice>       p_physical_device_;
-	std::unique_ptr<Device>               p_device_;
+	std::unique_ptr<Context>              p_ctx_;
 	std::unique_ptr<Swapchain>            p_swapchain_;
 	std::unique_ptr<RenderPass>           p_render_pass_;
 	std::unique_ptr<SwapchainFramebuffer> p_sframe_buffer_;

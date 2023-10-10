@@ -10,10 +10,8 @@
 
 namespace mz
 {
-DeviceMemoryAllocator::DeviceMemoryAllocator(Device &device)
+DeviceMemoryAllocator::DeviceMemoryAllocator(Instance &instance, PhysicalDevice &physical_device, Device &device)
 {
-	const Instance        &instance        = device.get_instance();
-	const PhysicalDevice  &physical_device = device.get_physical_device();
 	VmaAllocatorCreateInfo allocator_cinfo{
 	    .physicalDevice   = physical_device.get_handle(),
 	    .device           = device.get_handle(),

@@ -46,12 +46,15 @@ Instance::Instance(const std::string &app_name, Window &window)
 
 Instance::~Instance()
 {
-	if (ENABLE_VALIDATION_LAYERS)
+	if (handle_)
 	{
-		handle_.destroyDebugUtilsMessengerEXT(debug_messenger_);
+		if (ENABLE_VALIDATION_LAYERS)
+		{
+			handle_.destroyDebugUtilsMessengerEXT(debug_messenger_);
+		}
+		handle_.destroySurfaceKHR(surface_);
+		handle_.destroy();
 	}
-	handle_.destroySurfaceKHR(surface_);
-	handle_.destroy();
 }
 
 void Instance::create_instance(const std::string &app_name)
@@ -88,7 +91,7 @@ void Instance::create_instance(const std::string &app_name)
 		instance_cinfo.pNext = &debug_cinfo;
 	}
 	handle_ = vk::createInstance(instance_cinfo);
-	load_functionn_ptrs();
+	load_function_ptrs();
 
 	if (ENABLE_VALIDATION_LAYERS)
 	{
@@ -157,7 +160,7 @@ bool Instance::is_validation_layer_supported()
 	return true;
 }
 
-void Instance::load_functionn_ptrs()
+void Instance::load_function_ptrs()
 {
 	create_debug_utils_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(handle_.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
 
@@ -210,7 +213,7 @@ inline VKAPI_ATTR VkBool32 VKAPI_CALL Instance::debug_callback(
 	return VK_FALSE;
 }
 
-std::unique_ptr<PhysicalDevice> Instance::pick_physical_device()
+PhysicalDevice Instance::pick_physical_device(const std::vector<const char *> &device_extensions)
 {
 	auto physical_device_handles = handle_.enumeratePhysicalDevices();
 	if (!physical_device_handles.size())
@@ -222,19 +225,19 @@ std::unique_ptr<PhysicalDevice> Instance::pick_physical_device()
 	for (auto physical_device_handle : physical_device_handles)
 	{
 		PhysicalDevice physical_device = PhysicalDevice(physical_device_handle, *this);
-		if (is_physical_device_suitable(physical_device))
+		if (is_physical_device_suitable(physical_device, device_extensions))
 		{
-			return std::make_unique<PhysicalDevice>(std::move(physical_device));
+			return physical_device;
 		}
 	}
 
 	throw std::runtime_error("failed to find a suitable GPU!");
 }
 
-bool Instance::is_physical_device_suitable(const PhysicalDevice &physical_device)
+bool Instance::is_physical_device_suitable(const PhysicalDevice &physical_device, const std::vector<const char *> &device_extensions)
 {
 	const auto &indices                 = physical_device.get_queue_family_indices();
-	bool        is_extensions_supported = physical_device.is_all_extensions_supported(Device::REQUIRED_EXTENSIONS);
+	bool        is_extensions_supported = physical_device.is_all_extensions_supported(device_extensions);
 	bool        is_swap_chain_supported = false;
 	if (is_extensions_supported)
 	{

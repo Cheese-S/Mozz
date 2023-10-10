@@ -18,9 +18,8 @@ const std::vector<const char *> Device::REQUIRED_EXTENSIONS = {
 #endif
 };
 
-Device::Device(Instance &instance, PhysicalDevice &physical_device) :
-    instance_(instance),
-    physical_device_(physical_device)
+Device::Device(Instance &instance, PhysicalDevice &physical_device, const std::vector<const char *> &device_extensions) :
+    instance_(instance)
 {
 	QueueFamilyIndices indices        = physical_device.get_queue_family_indices();
 	std::set<uint32_t> unique_indices = {indices.compute_index.value(), indices.graphics_index.value(), indices.present_index.value()};
@@ -44,10 +43,10 @@ Device::Device(Instance &instance, PhysicalDevice &physical_device) :
 	    .flags                   = {},
 	    .queueCreateInfoCount    = to_u32(queue_cinfos.size()),
 	    .pQueueCreateInfos       = queue_cinfos.data(),
-	    .enabledLayerCount       = to_u32(instance_.VALIDATION_LAYERS.size()),
-	    .ppEnabledLayerNames     = instance_.VALIDATION_LAYERS.data(),
-	    .enabledExtensionCount   = to_u32(REQUIRED_EXTENSIONS.size()),
-	    .ppEnabledExtensionNames = REQUIRED_EXTENSIONS.data(),
+	    .enabledLayerCount       = to_u32(Instance::VALIDATION_LAYERS.size()),
+	    .ppEnabledLayerNames     = instance.VALIDATION_LAYERS.data(),
+	    .enabledExtensionCount   = to_u32(device_extensions.size()),
+	    .ppEnabledExtensionNames = device_extensions.data(),
 	    .pEnabledFeatures        = &required_features,
 	};
 
@@ -57,7 +56,7 @@ Device::Device(Instance &instance, PhysicalDevice &physical_device) :
 	present_queue_  = handle_.getQueue(indices.present_index.value(), 0);
 	compute_queue_  = handle_.getQueue(indices.compute_index.value(), 0);
 
-	p_device_memory_allocator_ = std::make_unique<DeviceMemoryAllocator>(*this);
+	p_device_memory_allocator_ = std::make_unique<DeviceMemoryAllocator>(instance, physical_device, *this);
 	p_one_time_buf_pool_       = std::make_unique<CommandPool>(*this, graphics_queue_, indices.graphics_index.value(), CommandPoolResetStrategy::eIndividual, vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
 }
 
@@ -89,16 +88,6 @@ void Device::end_one_time_buf(CommandBuffer &cmd_buf) const
 	graphics_queue_.submit(submit_info);
 	graphics_queue_.waitIdle();
 	p_one_time_buf_pool_->free_command_buffer(cmd_buf);
-}
-
-const Instance &Device::get_instance() const
-{
-	return instance_;
-}
-
-const PhysicalDevice &Device::get_physical_device() const
-{
-	return physical_device_;
 }
 
 const vk::Queue &Device::get_graphics_queue() const

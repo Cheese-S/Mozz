@@ -15,7 +15,6 @@ class RenderPass : public VulkanObject<vk::RenderPass>
 
 	static vk::AttachmentDescription depth_attachment(vk::Format format, vk::ImageLayout initial_layout = vk::ImageLayout::eUndefined, vk::ImageLayout final_layout = vk::ImageLayout::eDepthAttachmentOptimal);
 
-	RenderPass(Device &device, std::nullptr_t nptr);
 	RenderPass(Device &device, vk::RenderPassCreateInfo render_pass_cinfo);
 	~RenderPass() override;
 

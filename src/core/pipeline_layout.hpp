@@ -10,7 +10,6 @@ class Device;
 class PipelineLayout : public VulkanObject<vk::PipelineLayout>
 {
   public:
-	PipelineLayout(Device &device, std::nullptr_t nptr);
 	PipelineLayout(Device &device, vk::PipelineLayoutCreateInfo &pipeline_layout_cinfo);
 	~PipelineLayout() override;
 

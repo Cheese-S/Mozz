@@ -14,7 +14,7 @@ namespace sg
 {
 class SubMesh;
 }
-class Device;
+class Context;
 
 class GraphicsPipeline;
 class RenderPass;
@@ -53,7 +53,7 @@ class PBRBaker
 	static const uint32_t PREFILTER_DIMENSION;
 	static const uint32_t BRDF_LUT_DIMENSION;
 
-	PBRBaker(Device &device);
+	PBRBaker(Context &ctx);
 
 	PBR bake();
 
@@ -81,7 +81,7 @@ class PBRBaker
 	ImageResource            create_empty_cubic_img_resource(ImageMetaInfo &img_tinfo);
 	void                     create_brdf_lut_texture();
 
-	Device         &device_;
+	Context        &ctx_;
 	PBR             result_;
 	DescriptorState desc_state_;
 };

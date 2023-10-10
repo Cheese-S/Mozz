@@ -6,8 +6,7 @@
 
 namespace mz
 {
-class Device;
-class Instance;
+class Context;
 class ImageView;
 class ImageResource;
 
@@ -21,7 +20,7 @@ struct SwapchainProperties
 class Swapchain : public VulkanObject<vk::SwapchainKHR>
 {
   public:
-	Swapchain(Device &device, vk::Extent2D window_extent);
+	Swapchain(Context &context, vk::Extent2D window_extent);
 	~Swapchain() override;
 
 	void       cleanup();
@@ -42,7 +41,7 @@ class Swapchain : public VulkanObject<vk::SwapchainKHR>
 
 	void create_frame_resources();
 
-	Device                        &device_;
+	Context                       &context_;
 	SwapchainProperties            properties_;
 	std::vector<vk::Image>         frame_images_;        // Special images owned by vulkan
 	std::vector<ImageView>         frame_image_views_;

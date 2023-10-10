@@ -5,3 +5,5 @@ constexpr const bool IS_ON_OSX = true;
 #else
 constexpr const bool IS_ON_OSX = false;
 #endif
+
+extern const char *APP_NAME;

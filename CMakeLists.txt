@@ -39,6 +39,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/common/utils.hpp
     src/common/vk_common.hpp
 
+    src/core/context.cpp
+    src/core/context.hpp
     src/core/command_buffer.cpp
     src/core/command_buffer.hpp
     src/core/command_pool.cpp
