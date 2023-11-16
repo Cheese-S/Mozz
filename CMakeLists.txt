@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19.0)
 
-project(Wolfie3D)
+project(Mozz)
 
 if (MINGW) 
     include(${CMAKE_CURRENT_SOURCE_DIR}/windows.env.cmake)
