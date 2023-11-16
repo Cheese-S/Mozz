@@ -12,6 +12,18 @@ Mozz is a basic raytracer that serves the purpose of showcasing the necessary st
 - [Download and install Vulkan SDK](https://vulkan.lunarg.com/)
 - [Download and install CMake](https://cmake.org/download/)
   - Make sure it's added to the system path.
+
+### Build Steps
+- Rename "envWindowsExample.cmake" to "windows.env.cmake"
+  - Update the filepath variable to your install locations
+- In windows powershell
+```
+cd Wolfie3D
+cmake -S . -B ./build/
+```
+- Open the solution file, Right-lick Wolfie3D and set as startup project.
+- Build and Run
+=======
 - For Windows Users, install [Powershell](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.3) or [Git Bash](https://gitforwindows.org/)
 ### Build Steps
 - Create a new directory where you will work called HW3
@@ -44,3 +56,4 @@ Mozz is a basic raytracer that serves the purpose of showcasing the necessary st
   - If you get any errors during the build, make sure you have the latest version of the Vulkan SDK installed
 - Once the build succeeds, right-click the Wolfie3D Project file within the solution (should be three project files, shaders, uninstall, and Wolfie3D), and click **Set As Startup Project** 
 - At the top of Visual Studio you should see a green arrow and the text **Local Windows Debugger**, click that and the HW application should run
+

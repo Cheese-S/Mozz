@@ -1,145 +1,170 @@
-if (WIN32)
-    include(./windows.env.cmake OPTIONAL RESULT_VARIABLE LOCAL_ENV)
-endif()
-if (UNIX)
-    include(./unix.env.cmake OPTIONAL RESULT_VARIABLE LOCAL_ENV)
-endif()
-message(STATUS "Local .env.cmake: ${LOCAL_ENV}")
+cmake_minimum_required(VERSION 3.19.0)
 
-# Specify the minimum version for CMake
+project(Wolfie3D)
 
-cmake_minimum_required(VERSION 3.11.0)
-
-set(NAME Engine)
-
-# Specify generators and compilers
-message(STATUS "using ${CMAKE_GENERATOR}")
-
-if (CMAKE_GENERATOR STREQUAL "Ninja" AND WIN32)
-    if (NOT MINGW_PATH)
-        message(FATAL_ERROR "MINGW_PATH not set in .env.cmake")
-    endif()
-    set(USE_MINGW "True")
+if (MINGW) 
+    include(${CMAKE_CURRENT_SOURCE_DIR}/windows.env.cmake)
     set(CMAKE_C_COMPILER ${MINGW_PATH}/bin/clang.exe)
     set(CMAKE_CXX_COMPILER ${MINGW_PATH}/bin/clang++.exe)
+    add_link_options("-fuse-ld=lld")
 endif()
 
-project(${NAME} VERSION 0.1.0)
+execute_process(COMMAND uname OUTPUT_VARIABLE uname)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 
-# Find Vulkan
-if (DEFINED VULKAN_SDK_PATH)
-    set(Vulkan_INCLUDE_DIRS "${VULKAN_SDK_PATH}/Include") # 1.1 Make sure this include path is correct
-    set(Vulkan_LIBRARIES "${VULKAN_SDK_PATH}/Lib") # 1.2 Make sure lib path is correct
-    set(Vulkan_FOUND "True")
-else()
-    find_package(Vulkan REQUIRED) # throws error if could not find Vulkan
-    message(STATUS "Found Vulkan: $ENV{VULKAN_SDK}")
-    #set(Vulkan_LIBRARIES "$ENV{Vulkan_SDK}/Lib")
+add_executable(${PROJECT_NAME})
+
+target_sources(${PROJECT_NAME} PRIVATE
+    src/main.cpp
+    src/gltf_loader.cpp
+    src/gltf_loader.hpp
+    src/stb_image_resize.cpp
+    src/tiny_gltf.cpp
+    src/pbr_baker.cpp
+    src/pbr_baker.hpp
+    src/ray_tracer.hpp
+    src/ray_tracer.cpp
+
+    src/common/cvar.cpp
+    src/common/cvar.hpp
+    src/common/error.hpp
+    src/common/file_utils.cpp
+    src/common/file_utils.hpp
+    src/common/glm_common.hpp
+    src/common/logging.hpp
+    src/common/timer.cpp
+    src/common/timer.hpp
+    src/common/utils.cpp
+    src/common/utils.hpp
+    src/common/vk_common.hpp
+    src/common/vk_common.cpp
+
+    src/core/context.cpp
+    src/core/context.hpp
+    src/core/command_buffer.cpp
+    src/core/command_buffer.hpp
+    src/core/command_pool.cpp
+    src/core/command_pool.hpp
+    src/core/descriptor_allocator.cpp
+    src/core/descriptor_allocator.hpp
+    src/core/device.cpp
+    src/core/device.hpp
+    src/core/device_memory
+    src/core/framebuffer.cpp
+    src/core/framebuffer.hpp
+    src/core/graphics_pipeline.cpp
+    src/core/graphics_pipeline.hpp
+    src/core/image_resource.cpp
+    src/core/image_resource.hpp
+    src/core/image_view.cpp
+    src/core/image_view.hpp
+    src/core/instance.cpp
+    src/core/instance.hpp
+    src/core/physical_device.cpp
+    src/core/physical_device.hpp
+    src/core/pipeline_layout.cpp
+    src/core/pipeline_layout.hpp
+    src/core/render_pass.cpp
+    src/core/render_pass.hpp
+    src/core/renderer.cpp
+    src/core/renderer.hpp
+    src/core/sampler.cpp
+    src/core/sampler.hpp
+    src/core/surface.cpp
+    src/core/surface.hpp
+    src/core/swapchain.cpp
+    src/core/swapchain.hpp
+    src/core/sync_objects.cpp
+    src/core/sync_objects.hpp
+    src/core/queue.cpp
+    src/core/queue.hpp
+    src/core/vulkan_object.hpp
+    src/core/window.cpp
+    src/core/window.hpp
+
+    src/core/device_memory/allocator.cpp
+    src/core/device_memory/allocator.hpp
+    src/core/device_memory/buffer.cpp
+    src/core/device_memory/buffer.hpp
+    src/core/device_memory/device_memory_object.hpp
+    src/core/device_memory/image.cpp
+    src/core/device_memory/image.hpp
+    src/core/device_memory/vk_mem_alloc.cpp
+
+    src/scene_graph/component.cpp
+    src/scene_graph/component.hpp
+    src/scene_graph/event.hpp
+    src/scene_graph/node.cpp
+    src/scene_graph/node.hpp
+    src/scene_graph/scene.cpp
+    src/scene_graph/scene.hpp
+    src/scene_graph/script.cpp
+    src/scene_graph/script.hpp
+    src/scene_graph/components/aabb.cpp
+    src/scene_graph/components/aabb.hpp
+    src/scene_graph/components/camera.cpp
+    src/scene_graph/components/camera.hpp
+    src/scene_graph/components/image.cpp
+    src/scene_graph/components/image.hpp
+    src/scene_graph/components/material.cpp
+    src/scene_graph/components/material.hpp
+    src/scene_graph/components/mesh.cpp
+    src/scene_graph/components/mesh.hpp
+    src/scene_graph/components/pbr_material.cpp
+    src/scene_graph/components/pbr_material.hpp
+    src/scene_graph/components/perspective_camera.cpp
+    src/scene_graph/components/perspective_camera.hpp
+    src/scene_graph/components/sampler.cpp
+    src/scene_graph/components/sampler.hpp
+    src/scene_graph/components/submesh.cpp
+    src/scene_graph/components/submesh.hpp
+    src/scene_graph/components/texture.hpp
+    src/scene_graph/components/texture.cpp
+    src/scene_graph/components/transform.cpp
+    src/scene_graph/components/transform.hpp
+    src/scene_graph/components/skin.cpp
+    src/scene_graph/components/skin.hpp
+    src/scene_graph/scripts/free_camera.cpp
+    src/scene_graph/scripts/free_camera.hpp
+    src/scene_graph/scripts/arc_ball_camera.cpp
+    src/scene_graph/scripts/arc_ball_camera.hpp
+    src/scene_graph/scripts/animation.cpp
+    src/scene_graph/scripts/animation.hpp
+
+    src/ray_tracing/as_builder.hpp
+    src/ray_tracing/as_builder.cpp
+    src/ray_tracing/acceleration_structure.hpp
+    src/ray_tracing/acceleration_structure.cpp
+    src/ray_tracing/ray_tracing_pipeline.hpp
+    src/ray_tracing/ray_tracing_pipeline.cpp
+)
+
+set_target_properties(${PROJECT_NAME}
+    PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO
+)
+
+if (MINGW)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/include)
+    target_link_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/lib)
 endif()
-if (NOT Vulkan_FOUND)
-	message(FATAL_ERROR "Could not find Vulkan library!")
-else()
-	message(STATUS "Using vulkan lib at: ${Vulkan_LIBRARIES}")
-endif()
 
-# Find GLFW
-if (DEFINED GLFW_PATH)
-    message(STATUS "Using GLFW path specified in .env")
-    set(GLFW_INCLUDE_DIRS "${GLFW_PATH}/include")
-    if (MSVC)
-        set(GLFW_LIB "${GLFW_PATH}/lib-vc2019")
-    elseif (CMAKE_GENERATOR STREQUAL "Ninja")
-        message(STATUS "USING NINJA")
-        set(GLFW_LIB "${GLFW_PATH}/lib-mingw-w64") 
-    endif()
-else()
-    find_package(glfw3 3.3 REQUIRED)
-    set(GLFW_LIB glfw)
-    message(STATUS "Found GLFW")
-endif()
-if (NOT GLFW_LIB)
-	message(FATAL_ERROR "Could not find glfw library!")
-else()
-	message(STATUS "Using glfw lib at: ${GLFW_LIB}")
-endif()
-
-# Find tinygltf
-if (NOT TINYGLTF_PATH)
-    message(STATUS "TINYGLTF_PATH not specified in .env.cmake, using external/tinygltf")
-    set(TINYGLTF_PATH external/tinygltf)
-endif()
-
-if (NOT TINYOBJ_PATH)
-    message(STATUS "TINYOBJ_PATH not specified in .env.cmake, using external/tinyobj")
-    set(TINYOBJ_PATH external/tinyobj)
-endif()
-
-file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-
-add_executable(${PROJECT_NAME} ${SOURCES})
-
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
-
-set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build")
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 
-if (WIN32)
-    message(STATUS "CREATING BUILD FOR WINDOWS")
-    
-    if (USE_MINGW)
-        target_include_directories(${PROJECT_NAME} PUBLIC 
-            ${MINGW_PATH}/include
-        )
-        target_link_directories(${PROJECT_NAME} PUBLIC
-            ${MINGW_PATH}/lib
-        )
-    endif()
-
-    target_include_directories(${PROJECT_NAME} PUBLIC
-        ${PROJECT_SOURCE_DIR}/src
-        ${Vulkan_INCLUDE_DIRS}
-        ${GLFW_INCLUDE_DIRS}
-        ${GLM_PATH}
-        ${TINYGLTF_PATH}
-        ${TINYOBJ_PATH}
-    )
-
-    target_link_directories(${PROJECT_NAME} PUBLIC
-        ${Vulkan_LIBRARIES}
-        ${GLFW_LIB}
-    )
-
-    target_link_libraries(${PROJECT_NAME} glfw3 vulkan-1)
-elseif (UNIX)
-    message(STATUS "CREATING BUILD FOR UNIX")
-    target_include_directories(${PROJECT_NAME} PUBLIC
-        ${PROJECT_SOURCE_DIR}/src
-        ${TINYGLTF_PATH}
-        ${TINYOBJ_PATH}
-    )
-    target_link_libraries(${PROJECT_NAME} glfw ${Vulkan_LIBRARIES})
-endif()
-
-# Build shaders
-
-set( ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
-
-set(SHADER_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
-set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
-
-file(GLOB SHADERS ${SHADER_DIR}/*.vert ${SHADER_DIR}/*.frag ${SHADER_DIR}/*.comp ${SHADER_DIR}/*.geom ${SHADER_DIR}/*.tesc ${SHADER_DIR}/*.tese ${SHADER_DIR}/*.mesh ${SHADER_DIR}/*.task ${SHADER_DIR}/*.rgen ${SHADER_DIR}/*.rchit ${SHADER_DIR}/*.rmiss)
-
-foreach(SHADER IN LISTS SHADERS)
-    get_filename_component(FILENAME ${SHADER} NAME)
-    add_custom_command(OUTPUT ${SHADER_OUTPUT_DIR}/${FILENAME}.spv
-        COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${SHADER} -o ${SHADER_OUTPUT_DIR}/${FILENAME}.spv
-        DEPENDS ${SHADER}
-        COMMENT "Compiling ${FILENAME}")
-list(APPEND SPV_SHADERS ${SHADER_OUTPUT_DIR}/${FILENAME}.spv)
-endForeach()
-
-add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})
-
-add_dependencies(Engine shaders)
+target_link_libraries(${PROJECT_NAME}
+    tinygltf
+    glm
+    glfw
+    spdlog
+    stb
+    Vulkan::Vulkan
+    vma
+    gli
+    renderdoc
+)
