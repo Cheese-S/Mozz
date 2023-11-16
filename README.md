@@ -28,7 +28,7 @@ cmake -S . -B ./build/
 ### Build Steps
 - Create a new directory where you will work called HW3
 - Open Powershell or Git Bash and navigate to your HW3 directory
-- Clone the Repo ``git clone https://github.com/Cheese-S/Wolfie3D.git .`` - this will put the project in your current directory, i.e. HW3
+- Clone the Repo ``git clone https://github.com/Cheese-S/Wolfie3D.git .`` - this will put the project in your current directory
 - Switch to the HW branch ``git switch HW``
 - Pull all the dependencies into the project ``git submodule update --init --recursive``
   - If you get the following errors:
@@ -51,7 +51,7 @@ cmake -S . -B ./build/
     - ``cmake -S .. -G "Visual Studio 17 2022"``
   - If your team is using Visual Studio Code 2019
     - ``cmake -S .. -G "Visual Studio 16 2019"``
-- After this has run, you should see a file in the build folder called **Wolfie3D.sln**
+- After this has run, you should see a file in the build folder called **Mozz.sln**
 - Open this file with Visual Studio. First you will need to make sure all necessary projects in the solution get built (shaders and Wolfie3D). To do this, in the VS Solution Explorer, right-click Solution Wolfie3D at the top and click Build Solution
   - If you get any errors during the build, make sure you have the latest version of the Vulkan SDK installed
 - Once the build succeeds, right-click the Wolfie3D Project file within the solution (should be three project files, shaders, uninstall, and Wolfie3D), and click **Set As Startup Project** 
