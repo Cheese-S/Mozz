@@ -21,7 +21,7 @@ struct QueueFamilyIndices
 	}
 };
 
-struct SwapchainSupportDetails
+struct SwapchainSupportInfo
 {
 	vk::SurfaceCapabilitiesKHR        capabilities;
 	std::vector<vk::SurfaceFormatKHR> formats;
@@ -37,18 +37,23 @@ class PhysicalDevice : public VulkanObject<typename vk::PhysicalDevice>
 	PhysicalDevice &operator=(const PhysicalDevice &) = delete;
 	PhysicalDevice &operator=(PhysicalDevice &&)      = delete;
 	PhysicalDevice(PhysicalDevice &&)                 = default;
-	bool is_all_extensions_supported(const std::vector<const char *> &required_extensions) const;
+	bool is_extensions_supported(const std::vector<const char *> &required_extensions) const;
+	bool is_features_supported(vk::PhysicalDeviceFeatures2 &required_features) const;
 
-	SwapchainSupportDetails   get_swapchain_support_details() const;
-	const QueueFamilyIndices &get_queue_family_indices() const;
-	uint32_t                  get_graphics_queue_family_index() const;
-	uint32_t                  get_compute_queue_family_index() const;
-	uint32_t                  get_present_queue_family_index() const;
+	SwapchainSupportInfo get_swapchain_support_details() const;
+
+	const vk::PhysicalDeviceRayTracingPipelinePropertiesKHR &get_ray_tracing_props() const;
+	const QueueFamilyIndices                                &get_queue_family_indices() const;
+	uint32_t                                                 get_graphics_queue_family_index() const;
+	uint32_t                                                 get_compute_queue_family_index() const;
+	uint32_t                                                 get_present_queue_family_index() const;
 
   private:
 	void find_queue_familiy_indices();
+	void find_ray_tracing_props();
 
-	Instance          &instance_;
-	QueueFamilyIndices indices_;
+	Instance                                         &instance_;
+	QueueFamilyIndices                                indices_;
+	vk::PhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props_;
 };
 }        // namespace mz

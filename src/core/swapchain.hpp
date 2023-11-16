@@ -30,6 +30,7 @@ class Swapchain : public VulkanObject<vk::SwapchainKHR>
 
 	const SwapchainProperties    &get_swapchain_properties() const;
 	const std::vector<ImageView> &get_frame_image_views() const;
+	const std::vector<vk::Image> &get_frame_images() const;
 	const ImageResource          &get_depth_resource() const;
 
   private:

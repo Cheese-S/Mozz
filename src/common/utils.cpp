@@ -47,7 +47,7 @@ sg::Node *add_free_camera_script(sg::Scene &scene, const std::string &node_name,
                                  int height)
 {
 	sg::Node *p_node   = find_valid_camera_node(scene, node_name);
-	auto      p_script = std::make_unique<sg::FreeCamera>(*p_node);
+	auto      p_script = std::make_unique<sg::FreeCamera>(*p_node, -1);
 
 	p_script->resize(width, height);
 	scene.add_component_to_node(std::move(p_script), *p_node);
@@ -58,7 +58,7 @@ sg::Node *add_free_camera_script(sg::Scene &scene, const std::string &node_name,
 sg::Node *add_arc_ball_camera_script(sg::Scene &scene, const std::string &node_name, int width, int height)
 {
 	sg::Node                          *p_node   = find_valid_camera_node(scene, node_name);
-	std::unique_ptr<sg::ArcBallCamera> p_script = std::make_unique<sg::ArcBallCamera>(*p_node, scene.get_bound());
+	std::unique_ptr<sg::ArcBallCamera> p_script = std::make_unique<sg::ArcBallCamera>(*p_node, scene.get_bound(), -1);
 
 	p_script->resize(width, height);
 	scene.add_component_to_node(std::move(p_script), *p_node);

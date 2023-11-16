@@ -55,6 +55,12 @@ inline std::string to_string(const T &value)
 	return ss.str();
 }
 
+template <typename T, typename B>
+bool has_flag(T flag, B bit)
+{
+	return (flag & bit) == bit;
+}
+
 std::string to_snake_case(const std::string &text);
 
 sg::Node *add_free_camera_script(sg::Scene &scene, const std::string &node_name, int width, int height);
@@ -85,5 +91,11 @@ constexpr uint32_t string_hash(const char *s)
 }
 
 uint32_t max_mip_levels(uint32_t width, uint32_t height);
+
+template <class T>
+constexpr T align_up(T x, size_t a) noexcept
+{
+	return T((x + (T(a) - 1)) & ~T(a - 1));
+}
 
 }        // namespace mz

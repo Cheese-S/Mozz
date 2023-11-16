@@ -9,9 +9,11 @@ namespace mz
 
 struct ContextCreateInfo
 {
-	std::string               app_name;
-	std::vector<const char *> device_extensions;
-	Window                   &window;
+	// features
+	std::string                  app_name;
+	std::vector<const char *>    device_extensions;
+	vk::PhysicalDeviceFeatures2 &requested_features;
+	Window                      &window;
 };
 
 struct Context

@@ -172,7 +172,7 @@ void GLTFLoader::init_scene_bound()
 	};
 }
 
-void GLTFLoader::load_samplers() const
+void GLTFLoader::load_samplers()
 {
 	std::vector<std::unique_ptr<sg::Sampler>> samplers(
 	    gltf_model_.samplers.size());
@@ -185,7 +185,7 @@ void GLTFLoader::load_samplers() const
 }
 
 std::unique_ptr<sg::Sampler> GLTFLoader::parse_sampler(
-    const tinygltf::Sampler &gltf_sampler) const
+    tinygltf::Sampler &gltf_sampler)
 {
 	auto name = gltf_sampler.name;
 
@@ -210,10 +210,10 @@ std::unique_ptr<sg::Sampler> GLTFLoader::parse_sampler(
 	    .borderColor   = vk::BorderColor::eIntOpaqueWhite,
 	};
 
-	return std::make_unique<sg::Sampler>(ctx_.device, name, sampler_cinfo);
+	return std::make_unique<sg::Sampler>(ctx_.device, name, sampler_id_++, sampler_cinfo);
 }
 
-std::unique_ptr<sg::Sampler> GLTFLoader::create_default_sampler() const
+std::unique_ptr<sg::Sampler> GLTFLoader::create_default_sampler()
 {
 	tinygltf::Sampler gltf_sampler;
 	gltf_sampler.minFilter = TINYGLTF_TEXTURE_FILTER_LINEAR;
@@ -239,7 +239,7 @@ void GLTFLoader::load_images()
 	p_scene_->set_components(std::move(p_images));
 }
 
-std::unique_ptr<sg::Image> GLTFLoader::parse_image(const tinygltf::Image &gltf_image)
+std::unique_ptr<sg::Image> GLTFLoader::parse_image(tinygltf::Image &gltf_image)
 {
 	if (!gltf_image.image.empty())
 	{
@@ -264,10 +264,11 @@ std::unique_ptr<sg::Image> GLTFLoader::parse_image(const tinygltf::Image &gltf_i
 
 	return std::make_unique<sg::Image>(
 	    ImageResource(ctx_.device, nullptr),
-	    gltf_image.name);
+	    gltf_image.name,
+	    image_id_++);
 }
 
-void GLTFLoader::batch_upload_images() const
+void GLTFLoader::batch_upload_images()
 {
 	std::vector<sg::Image *> p_images = p_scene_->get_components<sg::Image>();
 
@@ -306,7 +307,7 @@ void GLTFLoader::batch_upload_images() const
 	}
 };
 
-void GLTFLoader::create_image_resource(sg::Image &image, size_t idx) const
+void GLTFLoader::create_image_resource(sg::Image &image, size_t idx)
 {
 	const ImageTransferInfo &img_tinfo = img_tinfos_[idx];
 	vk::ImageCreateInfo      img_cinfo{
@@ -359,9 +360,9 @@ void GLTFLoader::load_textures()
 	p_scene_->add_component(std::move(p_default_sampler));
 }
 
-std::unique_ptr<sg::Texture> GLTFLoader::create_default_texture(sg::Sampler &default_sampler) const
+std::unique_ptr<sg::Texture> GLTFLoader::create_default_texture(sg::Sampler &default_sampler)
 {
-	std::unique_ptr<sg::Texture> p_texture = std::make_unique<sg::Texture>("default_texture");
+	std::unique_ptr<sg::Texture> p_texture = std::make_unique<sg::Texture>("default_texture", texture_id_++);
 	std::unique_ptr<sg::Image>   p_image   = create_default_texture_image();
 	p_texture->p_resource_                 = &p_image->get_resource();
 	p_texture->p_sampler_                  = &default_sampler;
@@ -369,7 +370,7 @@ std::unique_ptr<sg::Texture> GLTFLoader::create_default_texture(sg::Sampler &def
 	return p_texture;
 }
 
-std::unique_ptr<sg::Image> GLTFLoader::create_default_texture_image() const
+std::unique_ptr<sg::Image> GLTFLoader::create_default_texture_image()
 {
 	vk::ImageCreateInfo image_cinfo{
 	    .imageType = vk::ImageType::e2D,
@@ -405,12 +406,13 @@ std::unique_ptr<sg::Image> GLTFLoader::create_default_texture_image() const
 
 	ctx_.device.end_one_time_buf(cmd_buf);
 
-	return std::make_unique<sg::Image>(std::move(resource), "default_image");
+	return std::make_unique<sg::Image>(std::move(resource), "default_image", image_id_++);
 }
+
 std::unique_ptr<sg::Texture> GLTFLoader::parse_texture(
-    const tinygltf::Texture &gltf_texture) const
+    tinygltf::Texture &gltf_texture)
 {
-	return std::make_unique<sg::Texture>(gltf_texture.name);
+	return std::make_unique<sg::Texture>(gltf_texture.name, texture_id_++);
 }
 
 void GLTFLoader::load_materials()
@@ -428,13 +430,12 @@ void GLTFLoader::load_materials()
 		append_textures_to_material(gltf_material.additionalValues, p_textures, p_material.get());
 		p_scene_->add_component(std::move(p_material));
 	}
-	std::unique_ptr<sg::PBRMaterial> p_default_material = create_default_material();
 }
 
 std::unique_ptr<sg::PBRMaterial> GLTFLoader::parse_material(
-    const tinygltf::Material &gltf_material) const
+    tinygltf::Material &gltf_material)
 {
-	auto material = std::make_unique<sg::PBRMaterial>(gltf_material.name);
+	auto material = std::make_unique<sg::PBRMaterial>(gltf_material.name, material_id_++);
 
 	for (auto &gltf_value : gltf_material.values)
 	{
@@ -511,10 +512,20 @@ void GLTFLoader::append_textures_to_material(tinygltf::ParameterMap &parameter_m
 	}
 }
 
-std::unique_ptr<sg::PBRMaterial> GLTFLoader::create_default_material() const
+std::unique_ptr<sg::PBRMaterial> GLTFLoader::create_default_material()
 {
 	tinygltf::Material gltf_material;
-	return parse_material(gltf_material);
+
+	std::unique_ptr<sg::PBRMaterial> p_material = parse_material(gltf_material);
+
+	p_material->texture_map_["base_color_texture"] =
+	    p_material->texture_map_["normal_texture"] =
+	        p_material->texture_map_["occlusion_texture"] =
+	            p_material->texture_map_["emissive_texture"] =
+	                p_material->texture_map_["metallic_roughness_texture"] =
+	                    p_scene_->get_components<sg::Texture>().back();
+
+	return p_material;
 }
 
 void GLTFLoader::load_meshs()
@@ -526,7 +537,7 @@ void GLTFLoader::load_meshs()
 	{
 		std::unique_ptr<sg::Mesh> p_mesh = parse_mesh(gltf_mesh);
 
-		for (const auto &primitive : gltf_mesh.primitives)
+		for (auto &primitive : gltf_mesh.primitives)
 		{
 			std::unique_ptr<sg::SubMesh> p_submesh = parse_submesh(p_mesh.get(), primitive);
 			if (primitive.material >= 0)
@@ -548,22 +559,22 @@ void GLTFLoader::load_meshs()
 	p_scene_->add_component(std::move(p_default_material));
 }
 
-std::unique_ptr<sg::Mesh> GLTFLoader::parse_mesh(const tinygltf::Mesh &gltf_mesh) const
+std::unique_ptr<sg::Mesh> GLTFLoader::parse_mesh(tinygltf::Mesh &gltf_mesh)
 {
-	return std::make_unique<sg::Mesh>(gltf_mesh.name);
+	return std::make_unique<sg::Mesh>(gltf_mesh.name, mesh_id_++);
 }
 
-std::unique_ptr<sg::SubMesh> GLTFLoader::parse_submesh(sg::Mesh *p_mesh, const tinygltf::Primitive &gltf_submesh) const
+std::unique_ptr<sg::SubMesh> GLTFLoader::parse_submesh(sg::Mesh *p_mesh, tinygltf::Primitive &gltf_submesh)
 {
 	std::vector<Buffer>          transient_bufs;
-	std::unique_ptr<sg::SubMesh> p_submesh = std::make_unique<sg::SubMesh>();
-	p_submesh->vertex_count_               = get_submesh_vertex_count(gltf_submesh);
+	std::unique_ptr<sg::SubMesh> p_submesh = std::make_unique<sg::SubMesh>("", submesh_id_++);
+	p_submesh->vert_count_                 = get_submesh_vertex_count(gltf_submesh);
 	if (p_mesh)
 	{
 		update_parent_mesh_bound(p_mesh, gltf_submesh);
 	}
 	std::vector<sg::Vertex> vertexs;
-	vertexs.reserve(p_submesh->vertex_count_);
+	vertexs.reserve(p_submesh->vert_count_);
 
 	DataAccessInfo<float>    pos    = get_attr_data_ptr<float>(gltf_submesh, "POSITION");
 	DataAccessInfo<float>    norm   = get_attr_data_ptr<float>(gltf_submesh, "NORMAL");
@@ -574,7 +585,7 @@ std::unique_ptr<sg::SubMesh> GLTFLoader::parse_submesh(sg::Mesh *p_mesh, const t
 
 	bool is_skinned = joint.p_data && weight.p_data;
 
-	for (size_t i = 0; i < p_submesh->vertex_count_; i++)
+	for (size_t i = 0; i < p_submesh->vert_count_; i++)
 	{
 		vertexs.emplace_back(sg::Vertex{
 		    .pos    = glm::make_vec3(&pos.p_data[i * pos.stride]),
@@ -594,7 +605,7 @@ std::unique_ptr<sg::SubMesh> GLTFLoader::parse_submesh(sg::Mesh *p_mesh, const t
 	vertex_staging_buf.update(vertexs.data(), vertex_buf_size);
 	CommandBuffer cmd_buf = ctx_.device.begin_one_time_buf();
 	cmd_buf.copy_buffer(vertex_staging_buf, vertex_buf, vertex_buf_size);
-	p_submesh->p_vertex_buf_ = std::make_unique<Buffer>(std::move(vertex_buf));
+	p_submesh->p_vert_buf_ = std::make_unique<Buffer>(std::move(vertex_buf));
 	transient_bufs.push_back(std::move(vertex_staging_buf));
 
 	if (gltf_submesh.indices >= 0)
@@ -636,14 +647,14 @@ std::unique_ptr<sg::SubMesh> GLTFLoader::parse_submesh(sg::Mesh *p_mesh, const t
 	return std::move(p_submesh);
 }
 
-size_t GLTFLoader::get_submesh_vertex_count(const tinygltf::Primitive &submesh) const
+size_t GLTFLoader::get_submesh_vertex_count(tinygltf::Primitive &submesh)
 {
 	// GLTF gurantees that a vertex will always have position attribute
 	const tinygltf::Accessor accessor = gltf_model_.accessors[submesh.attributes.find("POSITION")->second];
 	return accessor.count;
 }
 
-void GLTFLoader::update_parent_mesh_bound(sg::Mesh *p_mesh, const tinygltf::Primitive &submesh) const
+void GLTFLoader::update_parent_mesh_bound(sg::Mesh *p_mesh, tinygltf::Primitive &submesh)
 {
 	const tinygltf::Accessor accessor = gltf_model_.accessors[submesh.attributes.find("POSITION")->second];
 	p_mesh->get_mut_bounds().update(
@@ -653,20 +664,20 @@ void GLTFLoader::update_parent_mesh_bound(sg::Mesh *p_mesh, const tinygltf::Prim
 
 void GLTFLoader::load_cameras()
 {
-	for (const tinygltf::Camera &camera : gltf_model_.cameras)
+	for (tinygltf::Camera &camera : gltf_model_.cameras)
 	{
 		p_scene_->add_component(parse_camera(camera));
 	}
 }
 
 std::unique_ptr<sg::Camera> GLTFLoader::parse_camera(
-    const tinygltf::Camera &gltf_camera) const
+    tinygltf::Camera &gltf_camera)
 {
 	std::unique_ptr<sg::Camera> camera;
 
 	if (gltf_camera.type == "perspective")
 	{
-		auto perspective_camera = std::make_unique<sg::PerspectiveCamera>(gltf_camera.name);
+		auto perspective_camera = std::make_unique<sg::PerspectiveCamera>(gltf_camera.name, camera_id_++);
 
 		perspective_camera->set_aspect_ratio(
 		    static_cast<float>(gltf_camera.perspective.aspectRatio));
@@ -686,7 +697,7 @@ std::unique_ptr<sg::Camera> GLTFLoader::parse_camera(
 
 void GLTFLoader::load_default_camera()
 {
-	std::unique_ptr<sg::Node>   p_camera_node = std::make_unique<sg::Node>(-1, "default_camera");
+	std::unique_ptr<sg::Node>   p_camera_node = std::make_unique<sg::Node>("default_camera", node_id_++);
 	std::unique_ptr<sg::Camera> p_camera      = create_default_camera();
 
 	p_camera->set_node(*p_camera_node);
@@ -697,7 +708,7 @@ void GLTFLoader::load_default_camera()
 	p_scene_->add_node(std::move(p_camera_node));
 }
 
-std::unique_ptr<sg::Camera> GLTFLoader::create_default_camera() const
+std::unique_ptr<sg::Camera> GLTFLoader::create_default_camera()
 {
 	tinygltf::Camera gltf_camera;
 	gltf_camera.name = "default_camera";
@@ -715,7 +726,7 @@ void GLTFLoader::load_nodes(int scene_idx)
 {
 	std::vector<std::unique_ptr<sg::Node>> p_nodes      = parse_nodes();
 	tinygltf::Scene                       *p_gltf_scene = pick_scene(scene_idx);
-	std::unique_ptr<sg::Node>              root         = std::make_unique<sg::Node>(0, p_gltf_scene->name);
+	std::unique_ptr<sg::Node>              root         = std::make_unique<sg::Node>(p_gltf_scene->name, node_id_++);
 
 	init_node_hierarchy(p_gltf_scene, p_nodes, *root);
 
@@ -734,8 +745,8 @@ std::vector<std::unique_ptr<sg::Node>> GLTFLoader::parse_nodes()
 
 	for (size_t i = 0; i < gltf_model_.nodes.size(); i++)
 	{
-		const tinygltf::Node     &gltf_node = gltf_model_.nodes[i];
-		std::unique_ptr<sg::Node> p_node    = parse_node(gltf_node, i);
+		tinygltf::Node           &gltf_node = gltf_model_.nodes[i];
+		std::unique_ptr<sg::Node> p_node    = parse_node(gltf_node);
 
 		if (gltf_node.mesh >= 0)
 		{
@@ -765,10 +776,9 @@ std::vector<std::unique_ptr<sg::Node>> GLTFLoader::parse_nodes()
 	return p_nodes;
 }
 
-std::unique_ptr<sg::Node> GLTFLoader::parse_node(const tinygltf::Node &gltf_node,
-                                                 size_t                index) const
+std::unique_ptr<sg::Node> GLTFLoader::parse_node(tinygltf::Node &gltf_node)
 {
-	auto node = std::make_unique<sg::Node>(index, gltf_node.name);
+	auto node = std::make_unique<sg::Node>(gltf_node.name, node_id_++);
 
 	auto &transform = node->get_transform();
 
@@ -854,7 +864,7 @@ void GLTFLoader::load_animations()
 	for (size_t i = 0; i < gltf_model_.animations.size(); i++)
 	{
 		const tinygltf::Animation     &gltf_animation = gltf_model_.animations[i];
-		std::unique_ptr<sg::Animation> p_animation    = std::make_unique<sg::Animation>(gltf_animation.name);
+		std::unique_ptr<sg::Animation> p_animation    = std::make_unique<sg::Animation>(gltf_animation.name, animation_id_++);
 		p_animation->set_channels(parse_animation_channels(gltf_animation, p_nodes));
 		p_animation->update_interval();
 		p_animations.push_back(std::move(p_animation));
@@ -900,7 +910,7 @@ std::vector<sg::AnimationSampler> GLTFLoader::parse_animation_samplers(const tin
 	return samplers;
 }
 
-void GLTFLoader::parse_animation_input_data(const tinygltf::AnimationSampler &gltf_sampler, sg::AnimationSampler &sampler) const
+void GLTFLoader::parse_animation_input_data(const tinygltf::AnimationSampler &gltf_sampler, sg::AnimationSampler &sampler)
 {
 	const tinygltf::Accessor &input_accessor = gltf_model_.accessors[gltf_sampler.input];
 	std::vector<uint8_t>      input_data     = get_attr_data(gltf_model_, gltf_sampler.input);
@@ -911,7 +921,7 @@ void GLTFLoader::parse_animation_input_data(const tinygltf::AnimationSampler &gl
 	}
 }
 
-void GLTFLoader::parse_animation_output_data(const tinygltf::AnimationSampler &gltf_sampler, sg::AnimationSampler &sampler) const
+void GLTFLoader::parse_animation_output_data(const tinygltf::AnimationSampler &gltf_sampler, sg::AnimationSampler &sampler)
 {
 	const tinygltf::Accessor &output_accessor = gltf_model_.accessors[gltf_sampler.output];
 	std::vector<uint8_t>      output_data     = get_attr_data(gltf_model_, gltf_sampler.output);
@@ -959,14 +969,14 @@ void GLTFLoader::load_skins()
 {
 	std::vector<std::unique_ptr<sg::Skin>> p_skins;
 	p_skins.reserve(gltf_model_.skins.size());
-	for (const auto &gltf_skin : gltf_model_.skins)
+	for (auto &gltf_skin : gltf_model_.skins)
 	{
 		p_skins.push_back(parse_skin(gltf_skin));
 	}
 	p_scene_->set_components(std::move(p_skins));
 }
 
-std::unique_ptr<sg::Skin> GLTFLoader::parse_skin(const tinygltf::Skin &gltf_skin)
+std::unique_ptr<sg::Skin> GLTFLoader::parse_skin(tinygltf::Skin &gltf_skin)
 {
 	const std::vector<int> &joints = gltf_skin.joints;
 	if (joints.size() > sg::Skin::MAX_NUM_JOINTS)
@@ -974,7 +984,7 @@ std::unique_ptr<sg::Skin> GLTFLoader::parse_skin(const tinygltf::Skin &gltf_skin
 		LOGE("Skin {} exceeds the joint limits.", gltf_skin.name);
 		abort();
 	}
-	std::unique_ptr<sg::Skin> p_skin = std::make_unique<sg::Skin>(gltf_skin.name);
+	std::unique_ptr<sg::Skin> p_skin = std::make_unique<sg::Skin>(gltf_skin.name, skin_id_++);
 
 	auto                 &IBMs = p_skin->get_IBMs();
 	DataAccessInfo<float> IBM  = get_accessor_data_ptr<float>(gltf_skin.inverseBindMatrices);

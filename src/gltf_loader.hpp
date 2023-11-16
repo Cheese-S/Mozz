@@ -45,7 +45,7 @@ class GLTFLoader
 	void      load_gltf_model(const std::string &file_name);
 	sg::Scene parse_scene(int scene_idx = -1);
 
-	void load_samplers() const;
+	void load_samplers();
 	void load_images();
 	void load_textures();
 	void load_materials();
@@ -57,35 +57,33 @@ class GLTFLoader
 	void load_default_camera();
 
 	std::vector<std::unique_ptr<sg::Node>> parse_nodes();
-	std::unique_ptr<sg::Node>              parse_node(const tinygltf::Node &gltf_node,
-	                                                  size_t                index) const;
-	std::unique_ptr<sg::Camera>            parse_camera(const tinygltf::Camera &gltf_camera) const;
-	std::unique_ptr<sg::Mesh>              parse_mesh(const tinygltf::Mesh &gltf_mesh) const;
-	std::unique_ptr<sg::SubMesh>           parse_submesh(sg::Mesh *p_mesh, const tinygltf::Primitive &gltf_submesh) const;
-	std::unique_ptr<sg::PBRMaterial>       parse_material(
-	          const tinygltf::Material &gltf_material) const;
-	std::unique_ptr<sg::Image>   parse_image(const tinygltf::Image &gltf_image);
-	std::unique_ptr<sg::Sampler> parse_sampler(const tinygltf::Sampler &gltf_sampler) const;
-	std::unique_ptr<sg::Texture> parse_texture(const tinygltf::Texture &gltf_texture) const;
-	std::unique_ptr<sg::SubMesh> parse_submesh_as_model(
-	    const tinygltf::Primitive &gltf_primitive) const;
+	std::unique_ptr<sg::Node>              parse_node(tinygltf::Node &gltf_node);
+	std::unique_ptr<sg::Camera>            parse_camera(tinygltf::Camera &gltf_camera);
+	std::unique_ptr<sg::Mesh>              parse_mesh(tinygltf::Mesh &gltf_mesh);
+	std::unique_ptr<sg::SubMesh>           parse_submesh(sg::Mesh *p_mesh, tinygltf::Primitive &gltf_submesh);
+	std::unique_ptr<sg::PBRMaterial>       parse_material(tinygltf::Material &gltf_material);
+	std::unique_ptr<sg::Image>             parse_image(tinygltf::Image &gltf_image);
+	std::unique_ptr<sg::Sampler>           parse_sampler(tinygltf::Sampler &gltf_sampler);
+	std::unique_ptr<sg::Texture>           parse_texture(tinygltf::Texture &gltf_texture);
+	std::unique_ptr<sg::SubMesh>           parse_submesh_as_model(
+	              tinygltf::Primitive &gltf_primitive);
 	std::vector<sg::AnimationSampler> parse_animation_samplers(const tinygltf::Animation &gltf_animation);
-	void                              parse_animation_input_data(const tinygltf::AnimationSampler &gltf_sampler, sg::AnimationSampler &sampler) const;
-	void                              parse_animation_output_data(const tinygltf::AnimationSampler &gltf_sampler, sg::AnimationSampler &sampler) const;
+	void                              parse_animation_input_data(const tinygltf::AnimationSampler &gltf_sampler, sg::AnimationSampler &sampler);
+	void                              parse_animation_output_data(const tinygltf::AnimationSampler &gltf_sampler, sg::AnimationSampler &sampler);
 	std::vector<sg::AnimationChannel> parse_animation_channels(const tinygltf::Animation &gltf_animation, std::vector<sg::Node *> p_nodes);
-	std::unique_ptr<sg::Skin>         parse_skin(const tinygltf::Skin &gltf_skin);
+	std::unique_ptr<sg::Skin>         parse_skin(tinygltf::Skin &gltf_skin);
 
-	std::unique_ptr<sg::PBRMaterial> create_default_material() const;
-	std::unique_ptr<sg::Texture>     create_default_texture(sg::Sampler &default_sampler) const;
-	std::unique_ptr<sg::Image>       create_default_texture_image() const;
-	std::unique_ptr<sg::Sampler>     create_default_sampler() const;
-	std::unique_ptr<sg::Camera>      create_default_camera() const;
+	std::unique_ptr<sg::PBRMaterial> create_default_material();
+	std::unique_ptr<sg::Texture>     create_default_texture(sg::Sampler &default_sampler);
+	std::unique_ptr<sg::Image>       create_default_texture_image();
+	std::unique_ptr<sg::Sampler>     create_default_sampler();
+	std::unique_ptr<sg::Camera>      create_default_camera();
 
-	void             batch_upload_images() const;
-	void             create_image_resource(sg::Image &image, size_t idx) const;
+	void             batch_upload_images();
+	void             create_image_resource(sg::Image &image, size_t idx);
 	void             append_textures_to_material(tinygltf::ParameterMap &parameter_map, std::vector<sg::Texture *> &p_textures, sg::PBRMaterial *p_material);
-	size_t           get_submesh_vertex_count(const tinygltf::Primitive &submesh) const;
-	void             update_parent_mesh_bound(sg::Mesh *p_mesh, const tinygltf::Primitive &gltf_submesh) const;
+	size_t           get_submesh_vertex_count(tinygltf::Primitive &submesh);
+	void             update_parent_mesh_bound(sg::Mesh *p_mesh, tinygltf::Primitive &gltf_submesh);
 	tinygltf::Scene *pick_scene(int scene_idx);
 	void             init_node_hierarchy(tinygltf::Scene *p_gltf_scene, std::vector<std::unique_ptr<sg::Node>> &p_nodes, sg::Node &root);
 	void             init_scene_bound();
@@ -132,6 +130,17 @@ class GLTFLoader
 	tinygltf::Model                gltf_model_;
 	std::string                    model_path_;
 	std::vector<ImageTransferInfo> img_tinfos_;
+
+	size_t material_id_  = 0;
+	size_t submesh_id_   = 0;
+	size_t mesh_id_      = 0;
+	size_t texture_id_   = 0;
+	size_t node_id_      = 0;
+	size_t camera_id_    = 0;
+	size_t sampler_id_   = 0;
+	size_t skin_id_      = 0;
+	size_t image_id_     = 0;
+	size_t animation_id_ = 0;
 };
 
 }        // namespace mz

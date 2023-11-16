@@ -10,7 +10,7 @@ namespace mz::sg
 class Script : public Component
 {
   public:
-	Script(const std::string &name = "");
+	Script(const std::string &name, size_t id);
 
 	virtual ~Script() = default;
 	virtual std::type_index get_type() override;
@@ -23,7 +23,7 @@ class Script : public Component
 class NodeScript : public Script
 {
   public:
-	NodeScript(Node &node, const std::string &name = "");
+	NodeScript(Node &node, const std::string &name, size_t id);
 	virtual ~NodeScript() = default;
 	Node &get_node();
 

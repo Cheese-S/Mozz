@@ -12,7 +12,7 @@ class SubMesh;
 class Mesh : public Component
 {
   public:
-	Mesh(const std::string &name);
+	Mesh(const std::string &name, size_t id);
 	virtual ~Mesh() = default;
 
 	void add_submesh(SubMesh &submesh);

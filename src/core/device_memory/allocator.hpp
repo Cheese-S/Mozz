@@ -19,6 +19,11 @@ class DeviceMemoryAllocator : public VulkanObject<VmaAllocator>
 	DeviceMemoryAllocator(Instance &instance, PhysicalDevice &physical_device, Device &device);
 	~DeviceMemoryAllocator();
 
+	Buffer allocate_BST_buffer(size_t size) const;
+	Buffer allocate_AS_build_buffer(size_t size) const;
+	Buffer allocate_AS_buffer(size_t size) const;
+	Buffer allocate_storage_buffer(size_t size) const;
+	Buffer allocate_scratch_buffer(size_t size) const;
 	Buffer allocate_staging_buffer(size_t size) const;
 	Buffer allocate_vertex_buffer(size_t size) const;
 	Buffer allocate_index_buffer(size_t size) const;

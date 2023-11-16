@@ -8,7 +8,7 @@ class AABB;
 class ArcBallCamera : public NodeScript
 {
   public:
-	ArcBallCamera(Node &node, const AABB &scene_bd);
+	ArcBallCamera(Node &node, const AABB &scene_bd, size_t id);
 	~ArcBallCamera() = default;
 	void update(float delta_time) override;
 	void process_event(const Event &event) override;

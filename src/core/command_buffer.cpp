@@ -4,6 +4,7 @@
 #include "core/device.hpp"
 #include "core/image_resource.hpp"
 #include "core/image_view.hpp"
+#include "core/queue.hpp"
 #include "device_memory/buffer.hpp"
 
 namespace mz
@@ -44,7 +45,7 @@ void CommandBuffer::flush(vk::SubmitInfo submit_info)
 {
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers    = &handle_;
-	pool_.get_queue().submit(submit_info);
+	pool_.get_queue().get_handle().submit(submit_info);
 }
 
 void CommandBuffer::reset()

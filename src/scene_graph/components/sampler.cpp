@@ -4,8 +4,8 @@
 
 namespace mz::sg
 {
-Sampler::Sampler(const Device &device, const std::string &name, vk::SamplerCreateInfo &sampler_cinfo) :
-    Component(name),
+Sampler::Sampler(const Device &device, const std::string &name, size_t id, vk::SamplerCreateInfo &sampler_cinfo) :
+    Component(name, id),
     device_(device),
     sampler_(device_, sampler_cinfo){};
 

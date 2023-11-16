@@ -41,7 +41,7 @@ void Swapchain::build(vk::Extent2D window_extent)
 	PhysicalDevice &physical_device = context_.physical_device;
 	Device         &device          = context_.device;
 
-	const SwapchainSupportDetails &details = physical_device.get_swapchain_support_details();
+	const SwapchainSupportInfo &details = physical_device.get_swapchain_support_details();
 	choose_format(details.formats);
 	choose_present_mode(details.present_modes);
 	choose_extent(details.capabilities, window_extent);
@@ -53,7 +53,7 @@ void Swapchain::build(vk::Extent2D window_extent)
 	    .imageColorSpace  = properties_.surface_format.colorSpace,
 	    .imageExtent      = properties_.extent,
 	    .imageArrayLayers = 1,
-	    .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment,
+	    .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst,
 	    .preTransform     = details.capabilities.currentTransform,
 	    .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
 	    .presentMode      = properties_.present_mode,
@@ -194,6 +194,11 @@ const SwapchainProperties &Swapchain::get_swapchain_properties() const
 const std::vector<ImageView> &Swapchain::get_frame_image_views() const
 {
 	return frame_image_views_;
+}
+
+const std::vector<vk::Image> &Swapchain::get_frame_images() const
+{
+	return frame_images_;
 }
 
 const ImageResource &Swapchain::get_depth_resource() const

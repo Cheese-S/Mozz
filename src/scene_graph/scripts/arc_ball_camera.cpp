@@ -9,8 +9,8 @@
 namespace mz::sg
 {
 
-ArcBallCamera::ArcBallCamera(Node &camera_node, const AABB &scene_bd) :
-    NodeScript(camera_node)
+ArcBallCamera::ArcBallCamera(Node &camera_node, const AABB &scene_bd, size_t id) :
+    NodeScript(camera_node, "", id)
 {
 	auto &T = get_node().get_transform();
 	center_ = scene_bd.get_center();

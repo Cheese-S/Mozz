@@ -6,7 +6,7 @@ namespace mz::sg
 class PerspectiveCamera : public Camera
 {
   public:
-	PerspectiveCamera(const std::string &name);
+	PerspectiveCamera(const std::string &name, size_t id);
 	virtual ~PerspectiveCamera() = default;
 	virtual glm::mat4 get_projection() override;
 

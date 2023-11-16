@@ -7,6 +7,7 @@
 namespace mz
 {
 class Device;
+class AccelerationStructure;
 
 struct DescriptorAllocation
 {
@@ -77,10 +78,13 @@ class DescriptorBuilder
   public:
 	static DescriptorBuilder begin(DescriptorLayoutCache &layout_cache,
 	                               DescriptorAllocator   &descriptor_allocator);
+	DescriptorBuilder       &bind_tlas(uint32_t binding, vk::WriteDescriptorSetAccelerationStructureKHR &as_write, vk::DescriptorType type, vk::ShaderStageFlags flags);
 	DescriptorBuilder       &bind_buffer(uint32_t binding, vk::DescriptorBufferInfo &buffer_info,
 	                                     vk::DescriptorType type, vk::ShaderStageFlags flasg);
 	DescriptorBuilder       &bind_image(uint32_t binding, vk::DescriptorImageInfo &image_info,
 	                                    vk::DescriptorType type, vk::ShaderStageFlags flags);
+	DescriptorBuilder       &bind_images(uint32_t binding, std::vector<vk::DescriptorImageInfo> &image_infos, vk::DescriptorType type, vk::ShaderStageFlags flags);
+	DescriptorBuilder       &bind_sampler(uint32_t binding, vk::DescriptorImageInfo sampler_image_info, vk::DescriptorType type, vk::ShaderStageFlags flags);
 	DescriptorAllocation     build();
 
   private:

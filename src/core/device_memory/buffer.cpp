@@ -52,12 +52,12 @@ void Buffer::update(const uint8_t *p_data, size_t size, size_t offset)
 {
 	if (is_persistent_)
 	{
-		std::copy(p_data, p_data + size, to_ubyte_ptr(details_.allocation_info.pMappedData));
+		std::copy(p_data, p_data + size, to_ubyte_ptr(details_.allocation_info.pMappedData) + offset);
 	}
 	else
 	{
 		map();
-		std::copy(p_data, p_data + size, to_ubyte_ptr(p_mapped_data_));
+		std::copy(p_data, p_data + size, to_ubyte_ptr(p_mapped_data_) + offset);
 		flush();
 		unmap();
 	}

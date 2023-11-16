@@ -2,8 +2,8 @@
 
 namespace mz::sg
 {
-PerspectiveCamera::PerspectiveCamera(const std::string &name) :
-    Camera(name)
+PerspectiveCamera::PerspectiveCamera(const std::string &name, size_t id) :
+    Camera(name, id)
 {
 }
 

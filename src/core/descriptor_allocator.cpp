@@ -2,7 +2,9 @@
 
 #include "common/utils.hpp"
 #include "device.hpp"
-#include "vulkan/vulkan_hash.hpp"
+#include "ray_tracing/acceleration_structure.hpp"
+
+#include <vulkan/vulkan_hash.hpp>
 
 namespace mz
 {
@@ -23,6 +25,28 @@ DescriptorBuilder DescriptorBuilder::begin(DescriptorLayoutCache &layout_cache,
 {
 	DescriptorBuilder builder(layout_cache, allocator);
 	return builder;
+}
+
+DescriptorBuilder &DescriptorBuilder::bind_tlas(uint32_t binding, vk::WriteDescriptorSetAccelerationStructureKHR &as_write, vk::DescriptorType type, vk::ShaderStageFlags flags)
+{
+	vk::DescriptorSetLayoutBinding new_layout_binding{
+	    .binding         = binding,
+	    .descriptorType  = type,
+	    .descriptorCount = 1,
+	    .stageFlags      = flags,
+	};
+
+	layout_bindings_.push_back(new_layout_binding);
+
+	vk::WriteDescriptorSet write{
+	    .pNext           = &as_write,
+	    .dstBinding      = binding,
+	    .descriptorCount = 1,
+	    .descriptorType  = type,
+	};
+
+	writes_.push_back(write);
+	return *this;
 }
 
 DescriptorBuilder &DescriptorBuilder::bind_buffer(uint32_t                  binding,
@@ -65,6 +89,48 @@ DescriptorBuilder &DescriptorBuilder::bind_image(uint32_t                 bindin
 	write.descriptorType  = type;
 	write.pImageInfo      = &image_info;
 	write.dstBinding      = binding;
+	writes_.push_back(write);
+	return *this;
+}
+
+DescriptorBuilder &DescriptorBuilder::bind_images(uint32_t binding, std::vector<vk::DescriptorImageInfo> &image_infos, vk::DescriptorType type, vk::ShaderStageFlags flags)
+{
+	vk::DescriptorSetLayoutBinding new_layout_binding{
+	    .binding         = binding,
+	    .descriptorType  = type,
+	    .descriptorCount = to_u32(image_infos.size()),
+	    .stageFlags      = flags,
+	};
+	layout_bindings_.push_back(new_layout_binding);
+
+	vk::WriteDescriptorSet write{
+	    .dstBinding      = binding,
+	    .descriptorCount = new_layout_binding.descriptorCount,
+	    .descriptorType  = type,
+	    .pImageInfo      = image_infos.data(),
+	};
+
+	writes_.push_back(write);
+	return *this;
+}
+
+DescriptorBuilder &DescriptorBuilder::bind_sampler(uint32_t binding, vk::DescriptorImageInfo sampler_image_info, vk::DescriptorType type, vk::ShaderStageFlags flags)
+{
+	vk::DescriptorSetLayoutBinding new_layout_binding{
+	    .binding         = binding,
+	    .descriptorType  = type,
+	    .descriptorCount = 1,
+	    .stageFlags      = flags,
+	};
+	layout_bindings_.push_back(new_layout_binding);
+
+	vk::WriteDescriptorSet write{
+	    .dstBinding      = binding,
+	    .descriptorCount = 1,
+	    .descriptorType  = type,
+	    .pImageInfo      = &sampler_image_info,
+	};
+
 	writes_.push_back(write);
 	return *this;
 }
@@ -240,9 +306,6 @@ vk::DescriptorSetLayout DescriptorLayoutCache::create_descriptor_layout(
 			is_sorted = false;
 		}
 	}
-
-	vk::DescriptorSetLayoutCreateInfo aaa;
-	vk::DescriptorSetLayoutBinding    binding;
 
 	// Vulkan does not require the bindings to be sorted.
 	// We want them to be sorted to implement the cache look up logic.

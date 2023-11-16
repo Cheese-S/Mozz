@@ -4,21 +4,29 @@
 #include "command_pool.hpp"
 #include "common/common.hpp"
 #include "common/utils.hpp"
+#include "device_memory/buffer.hpp"
 #include "instance.hpp"
 #include "physical_device.hpp"
+#include "queue.hpp"
 
 #include <set>
 
 namespace mz
 {
-const std::vector<const char *> Device::REQUIRED_EXTENSIONS = {
+const std::vector<const char *> Device::REQUIRED_EXTENSIONS{
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #ifdef __IS_ON_OSX__
     "VK_KHR_portability_subset"
 #endif
 };
 
-Device::Device(Instance &instance, PhysicalDevice &physical_device, const std::vector<const char *> &device_extensions) :
+const std::vector<const char *> Device::RAY_TRACING_EXTENSIONS = {
+    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+    VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+};
+
+Device::Device(Instance &instance, PhysicalDevice &physical_device, std::vector<const char *> &device_extensions) :
     instance_(instance)
 {
 	QueueFamilyIndices indices        = physical_device.get_queue_family_indices();
@@ -35,11 +43,39 @@ Device::Device(Instance &instance, PhysicalDevice &physical_device, const std::v
 		queue_cinfos.push_back(queue_cinfo);
 	}
 
+	for (const char *extension : RAY_TRACING_EXTENSIONS)
+	{
+		device_extensions.push_back(extension);
+	}
+
 	vk::PhysicalDeviceFeatures required_features;
 	required_features.samplerAnisotropy = true;
 	required_features.sampleRateShading = true;
 
+	vk::StructureChain<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceAccelerationStructureFeaturesKHR, vk::PhysicalDeviceRayTracingPipelineFeaturesKHR, vk::PhysicalDeviceBufferDeviceAddressFeatures, vk::PhysicalDeviceHostQueryResetFeatures, vk::PhysicalDeviceDescriptorIndexingFeatures> chain;
+
+	auto &core_features                      = chain.get<vk::PhysicalDeviceFeatures2>();
+	core_features.features.samplerAnisotropy = true;
+	core_features.features.sampleRateShading = true;
+	core_features.features.shaderInt64       = true;
+
+	auto &acc_struct_features                 = chain.get<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>();
+	acc_struct_features.accelerationStructure = true;
+
+	auto &ray_tracing_ppl_features              = chain.get<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR>();
+	ray_tracing_ppl_features.rayTracingPipeline = true;
+
+	auto &device_address_features               = chain.get<vk::PhysicalDeviceBufferDeviceAddressFeatures>();
+	device_address_features.bufferDeviceAddress = true;
+
+	auto &host_query_reset_features          = chain.get<vk::PhysicalDeviceHostQueryResetFeatures>();
+	host_query_reset_features.hostQueryReset = true;
+
+	auto &desc_index_feautres                  = chain.get<vk::PhysicalDeviceDescriptorIndexingFeatures>();
+	desc_index_feautres.runtimeDescriptorArray = true;
+
 	vk::DeviceCreateInfo device_cinfo{
+	    .pNext                   = &core_features,
 	    .flags                   = {},
 	    .queueCreateInfoCount    = to_u32(queue_cinfos.size()),
 	    .pQueueCreateInfos       = queue_cinfos.data(),
@@ -47,17 +83,18 @@ Device::Device(Instance &instance, PhysicalDevice &physical_device, const std::v
 	    .ppEnabledLayerNames     = instance.VALIDATION_LAYERS.data(),
 	    .enabledExtensionCount   = to_u32(device_extensions.size()),
 	    .ppEnabledExtensionNames = device_extensions.data(),
-	    .pEnabledFeatures        = &required_features,
 	};
 
 	handle_ = physical_device.get_handle().createDevice(device_cinfo);
 
-	graphics_queue_ = handle_.getQueue(indices.graphics_index.value(), 0);
-	present_queue_  = handle_.getQueue(indices.present_index.value(), 0);
-	compute_queue_  = handle_.getQueue(indices.compute_index.value(), 0);
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(handle_);
+
+	p_graphics_queue_ = std::make_unique<Queue>(*this, indices.graphics_index.value(), 0);
+	p_present_queue_  = std::make_unique<Queue>(*this, indices.present_index.value(), 0);
+	p_compute_queue_  = std::make_unique<Queue>(*this, indices.compute_index.value(), 0);
 
 	p_device_memory_allocator_ = std::make_unique<DeviceMemoryAllocator>(instance, physical_device, *this);
-	p_one_time_buf_pool_       = std::make_unique<CommandPool>(*this, graphics_queue_, indices.graphics_index.value(), CommandPoolResetStrategy::eIndividual, vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
+	p_one_time_buf_pool_       = std::make_unique<CommandPool>(*this, *p_graphics_queue_, CommandPoolResetStrategy::eIndividual, vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient);
 }
 
 Device::~Device()
@@ -85,24 +122,32 @@ void Device::end_one_time_buf(CommandBuffer &cmd_buf) const
 	    .pCommandBuffers    = &cmd_buf_handle,
 	};
 
-	graphics_queue_.submit(submit_info);
-	graphics_queue_.waitIdle();
+	p_graphics_queue_->get_handle().submit(submit_info);
+	p_graphics_queue_->get_handle().waitIdle();
 	p_one_time_buf_pool_->free_command_buffer(cmd_buf);
 }
 
-const vk::Queue &Device::get_graphics_queue() const
+vk::DeviceAddress Device::get_buffer_device_address(Buffer &buffer)
 {
-	return graphics_queue_;
+	vk::BufferDeviceAddressInfo buf_ainfo{
+	    .buffer = buffer.get_handle(),
+	};
+	return handle_.getBufferAddress(buf_ainfo);
 }
 
-const vk::Queue &Device::get_present_queue() const
+const Queue &Device::get_graphics_queue() const
 {
-	return present_queue_;
+	return *p_graphics_queue_;
 }
 
-const vk::Queue &Device::get_compute_queue() const
+const Queue &Device::get_present_queue() const
 {
-	return compute_queue_;
+	return *p_present_queue_;
+}
+
+const Queue &Device::get_compute_queue() const
+{
+	return *p_compute_queue_;
 }
 
 const DeviceMemoryAllocator &Device::get_device_memory_allocator() const

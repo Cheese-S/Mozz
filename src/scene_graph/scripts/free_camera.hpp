@@ -13,7 +13,7 @@ class FreeCamera : public NodeScript
 	static const float    TRANSLATION_MOVE_WEIGHT;
 	static const uint32_t TRANSLATION_MOVE_SPEED;
 
-	FreeCamera(Node &node);
+	FreeCamera(Node &node, size_t id);
 	virtual ~FreeCamera() = default;
 	void update(float delta_time) override;
 	void process_event(const Event &input_event) override;

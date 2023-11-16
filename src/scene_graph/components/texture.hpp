@@ -14,7 +14,7 @@ namespace sg
 class Texture : public Component
 {
   public:
-	Texture(const std::string &name);
+	Texture(const std::string &name, size_t id);
 	Texture(Texture &&other) = default;
 
 	virtual ~Texture() = default;

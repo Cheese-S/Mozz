@@ -13,6 +13,7 @@
 #include "core/graphics_pipeline.hpp"
 #include "core/image_view.hpp"
 #include "core/pipeline_layout.hpp"
+#include "core/queue.hpp"
 #include "core/render_pass.hpp"
 
 #include "scene_graph/components/submesh.hpp"
@@ -475,7 +476,7 @@ void PBRBaker::bake_brdf_lut()
 	bake_buf_handle.bindPipeline(vk::PipelineBindPoint::eGraphics, pl.get_handle());
 	bake_buf_handle.draw(3, 1, 0, 0);
 	bake_buf_handle.endRenderPass();
-	ctx_.device.get_graphics_queue().waitIdle();
+	ctx_.device.get_graphics_queue().get_handle().waitIdle();
 	ctx_.device.end_one_time_buf(bake_buf);
 }
 
@@ -634,7 +635,7 @@ DescriptorAllocation PBRBaker::allocate_texture_descriptor(Texture &texture)
 void PBRBaker::draw_box(CommandBuffer &cmd_buf)
 {
 	vk::CommandBuffer cmd_buf_handle = cmd_buf.get_handle();
-	cmd_buf_handle.bindVertexBuffers(0, result_.p_box->p_vertex_buf_->get_handle(), {0});
+	cmd_buf_handle.bindVertexBuffers(0, result_.p_box->p_vert_buf_->get_handle(), {0});
 	cmd_buf_handle.bindIndexBuffer(result_.p_box->p_idx_buf_->get_handle(), 0, vk::IndexType::eUint32);
 	cmd_buf_handle.drawIndexed(result_.p_box->idx_count_, 1, 0, 0, 0);
 }

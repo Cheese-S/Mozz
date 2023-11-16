@@ -21,6 +21,7 @@
 #include "core/image_view.hpp"
 #include "core/instance.hpp"
 #include "core/physical_device.hpp"
+#include "core/queue.hpp"
 #include "core/render_pass.hpp"
 #include "core/swapchain.hpp"
 #include "core/window.hpp"
@@ -44,10 +45,15 @@ Renderer::Renderer()
 	p_window_ = std::make_unique<Window>("Wolfie3D");
 	p_window_->register_callbacks(*this);
 
+	vk::StructureChain<vk::PhysicalDeviceFeatures2,
+	                   vk::PhysicalDeviceBufferDeviceAddressFeatures>
+	    requested_features;
+
 	ContextCreateInfo ctx_cinfo{
-	    .app_name          = "Wolfie3D",
-	    .device_extensions = {},
-	    .window            = *p_window_,
+	    .app_name           = "Wolfie3D",
+	    .device_extensions  = {},
+	    .requested_features = requested_features.get<vk::PhysicalDeviceFeatures2>(),
+	    .window             = *p_window_,
 	};
 
 	for (const char *extension_name : Device::REQUIRED_EXTENSIONS)
@@ -57,11 +63,12 @@ Renderer::Renderer()
 
 	p_ctx_              = std::make_unique<Context>(ctx_cinfo);
 	p_descriptor_state_ = std::make_unique<DescriptorState>(p_ctx_->device);
-	p_cmd_pool_         = std::make_unique<CommandPool>(p_ctx_->device, p_ctx_->device.get_graphics_queue(), p_ctx_->physical_device.get_graphics_queue_family_index());
+	p_cmd_pool_         = std::make_unique<CommandPool>(p_ctx_->device, p_ctx_->device.get_graphics_queue());
 	p_swapchain_        = std::make_unique<Swapchain>(*p_ctx_, p_window_->get_extent());
 	load_scene("2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
 	create_pbr_resources();
 	create_rendering_resources();
+	create_raytrace_resources();
 	p_sframe_buffer_ = std::make_unique<SwapchainFramebuffer>(p_ctx_->device, *p_swapchain_, *p_render_pass_);
 }
 
@@ -160,7 +167,7 @@ void Renderer::sync_submit_commands()
 	            .signalSemaphoreCount = 1,
 	            .pSignalSemaphores    = &frame.render_finished_semaphore.get_handle(),
     };
-	p_ctx_->device.get_graphics_queue().submit(submit_info, frame.in_flight_fence.get_handle());
+	p_ctx_->device.get_graphics_queue().get_handle().submit(submit_info, frame.in_flight_fence.get_handle());
 }
 
 void Renderer::sync_present(uint32_t img_idx)
@@ -177,7 +184,7 @@ void Renderer::sync_present(uint32_t img_idx)
 	// Same reasoing as sync_acquire.
 	// See, https://github.com/KhronosGroup/Vulkan-Hpp/issues/599
 	vk::Result present_res = static_cast<vk::Result>(
-	    vkQueuePresentKHR(p_ctx_->device.get_present_queue(), reinterpret_cast<VkPresentInfoKHR *>(&present_info)));
+	    vkQueuePresentKHR(p_ctx_->device.get_present_queue().get_handle(), reinterpret_cast<VkPresentInfoKHR *>(&present_info)));
 
 	if (present_res == vk::Result::eErrorOutOfDateKHR || present_res == vk::Result::eSuboptimalKHR || is_window_resized_)
 	{
@@ -402,7 +409,7 @@ void Renderer::disable_skin(CommandBuffer &cmd_buf)
 
 void Renderer::draw_submesh(CommandBuffer &cmd_buf, sg::SubMesh &submesh)
 {
-	cmd_buf.get_handle().bindVertexBuffers(0, submesh.p_vertex_buf_->get_handle(), {0});
+	cmd_buf.get_handle().bindVertexBuffers(0, submesh.p_vert_buf_->get_handle(), {0});
 	if (submesh.p_idx_buf_)
 	{
 		cmd_buf.get_handle().bindIndexBuffer(submesh.p_idx_buf_->get_handle(), 0, vk::IndexType::eUint32);
@@ -410,7 +417,7 @@ void Renderer::draw_submesh(CommandBuffer &cmd_buf, sg::SubMesh &submesh)
 	}
 	else
 	{
-		cmd_buf.get_handle().draw(submesh.vertex_count_, 1, 0, 0);
+		cmd_buf.get_handle().draw(submesh.vert_count_, 1, 0, 0);
 	}
 }
 
@@ -442,6 +449,13 @@ void Renderer::load_scene(const char *scene_name)
 
 	vk::Extent2D window_extent = p_window_->get_extent();
 	p_camera_node_             = add_arc_ball_camera_script(*p_scene_, "main_camera", window_extent.width, window_extent.height);
+}
+
+void Renderer::create_raytrace_resources()
+{
+	create_storage_image();
+	create_ASs();
+	create_raytrace_descriptor_resources();
 }
 
 void Renderer::create_pbr_resources()
@@ -691,6 +705,90 @@ void Renderer::create_pipeline_resources()
 	pl_state.depth_stencil_state.depth_test_enable  = false;
 	pl_state.depth_stencil_state.depth_write_enable = false;
 	skybox_.p_pl                                    = std::make_unique<GraphicsPipeline>(p_ctx_->device, *p_render_pass_, pl_state, skybox_pl_layout_cinfo);
+}
+
+void Renderer::create_ASs()
+{
+	ASBuilder                 builder(p_ctx_->device);
+	std::vector<sg::Node *>   p_nodes = p_scene_->get_nodes();
+	std::vector<sg::Node *>   p_meshful_nodes;
+	std::vector<BLASMeshInfo> blas_minfos;
+	for (sg::Node *p_node : p_nodes)
+	{
+		if (p_node->has_component<sg::Mesh>())
+		{
+			blas_minfos.emplace_back(ASBuilder::mesh_to_blas_minfo(p_ctx_->device, p_node->get_component<sg::Mesh>()));
+			p_meshful_nodes.push_back(p_node);
+		}
+	}
+	raytrace_.p_BLASs = builder.build_BLASs(blas_minfos, vk::BuildAccelerationStructureFlagBitsKHR::eAllowCompaction);
+
+	std::vector<vk::AccelerationStructureInstanceKHR> tlas;
+	tlas.reserve(p_meshful_nodes.size());
+	for (uint32_t i = 0; i < p_meshful_nodes.size(); i++)
+	{
+		sg::Node *p_node = p_meshful_nodes[i];
+		tlas.push_back(vk::AccelerationStructureInstanceKHR{
+		    .transform                              = sg::Transform::to_vk_transform(p_node->get_transform().get_world_M()),
+		    .instanceCustomIndex                    = i,
+		    .mask                                   = 0xFF,
+		    .instanceShaderBindingTableRecordOffset = 0,
+		    .flags                                  = VK_GEOMETRY_INSTANCE_TRIANGLE_FRONT_COUNTERCLOCKWISE_BIT_KHR,
+		    .accelerationStructureReference         = p_ctx_->device.get_buffer_device_address(raytrace_.p_BLASs[i]->get_buffer()),
+		});
+	}
+	raytrace_.p_TLAS = std::make_unique<AccelerationStructure>(builder.build_TLASs(tlas, vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace));
+}
+
+void Renderer::create_raytrace_descriptor_resources()
+{
+	vk::DescriptorImageInfo storage_img_info{
+	    .imageView   = p_storage_img_->get_view().get_handle(),
+	    .imageLayout = vk::ImageLayout::eGeneral,
+	};
+
+	vk::WriteDescriptorSetAccelerationStructureKHR as_write{
+	    .accelerationStructureCount = 1,
+	    .pAccelerationStructures    = &(raytrace_.p_TLAS->get_handle()),
+	};
+
+	DescriptorAllocation desc_allocation =
+	    DescriptorBuilder::begin(p_descriptor_state_->cache, p_descriptor_state_->allocator)
+	        .bind_tlas(0, as_write, vk::DescriptorType::eAccelerationStructureKHR, vk::ShaderStageFlagBits::eRaygenKHR)
+	        .bind_image(1, storage_img_info, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenKHR)
+	        .build();
+
+	raytrace_.desc_layout_ring[0] = desc_allocation.set_layout;
+	raytrace_.global_set          = desc_allocation.set;
+}
+
+void Renderer::create_storage_image()
+{
+	vk::Extent2D        extent = p_window_->get_extent();
+	vk::ImageCreateInfo img_cinfo{
+	    .imageType = vk::ImageType::e2D,
+	    .format    = vk::Format::eB8G8R8A8Unorm,
+	    .extent    = {
+	           .width  = extent.width,
+	           .height = extent.height,
+	           .depth  = 1,
+        },
+	    .mipLevels   = 1,
+	    .arrayLayers = 1,
+	    .samples     = vk::SampleCountFlagBits::e1,
+	    .tiling      = vk::ImageTiling::eOptimal,
+	    .usage       = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage,
+	};
+
+	Image img = p_ctx_->device.get_device_memory_allocator().allocate_device_only_image(img_cinfo);
+
+	vk::ImageViewCreateInfo view_cinfo = ImageView::two_dim_view_cinfo(img.get_handle(), vk::Format::eB8G8R8A8Unorm, vk::ImageAspectFlagBits::eColor, 0);
+
+	p_storage_img_ = std::make_unique<ImageResource>(std::move(img), ImageView(p_ctx_->device, view_cinfo));
+
+	CommandBuffer cmd_buf = p_ctx_->device.begin_one_time_buf();
+	cmd_buf.set_image_layout(*p_storage_img_, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
+	p_ctx_->device.end_one_time_buf(cmd_buf);
 }
 
 }        // namespace mz

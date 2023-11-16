@@ -40,6 +40,7 @@ const std::vector<const char *> Instance::VALIDATION_LAYERS = {
 
 Instance::Instance(const std::string &app_name, Window &window)
 {
+	init_dispatcher();
 	create_instance(app_name);
 	surface_ = window.create_surface(*this);
 }
@@ -55,6 +56,13 @@ Instance::~Instance()
 		handle_.destroySurfaceKHR(surface_);
 		handle_.destroy();
 	}
+}
+
+void Instance::init_dispatcher()
+{
+	vk::DynamicLoader loader;
+	auto              proc = loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(proc);
 }
 
 void Instance::create_instance(const std::string &app_name)
@@ -91,6 +99,7 @@ void Instance::create_instance(const std::string &app_name)
 		instance_cinfo.pNext = &debug_cinfo;
 	}
 	handle_ = vk::createInstance(instance_cinfo);
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(handle_);
 	load_function_ptrs();
 
 	if (ENABLE_VALIDATION_LAYERS)
@@ -213,7 +222,7 @@ inline VKAPI_ATTR VkBool32 VKAPI_CALL Instance::debug_callback(
 	return VK_FALSE;
 }
 
-PhysicalDevice Instance::pick_physical_device(const std::vector<const char *> &device_extensions)
+PhysicalDevice Instance::pick_physical_device(const std::vector<const char *> &device_extensions, vk::PhysicalDeviceFeatures2 &required_features)
 {
 	auto physical_device_handles = handle_.enumeratePhysicalDevices();
 	if (!physical_device_handles.size())
@@ -225,7 +234,7 @@ PhysicalDevice Instance::pick_physical_device(const std::vector<const char *> &d
 	for (auto physical_device_handle : physical_device_handles)
 	{
 		PhysicalDevice physical_device = PhysicalDevice(physical_device_handle, *this);
-		if (is_physical_device_suitable(physical_device, device_extensions))
+		if (is_physical_device_suitable(physical_device, device_extensions, required_features))
 		{
 			return physical_device;
 		}
@@ -234,20 +243,21 @@ PhysicalDevice Instance::pick_physical_device(const std::vector<const char *> &d
 	throw std::runtime_error("failed to find a suitable GPU!");
 }
 
-bool Instance::is_physical_device_suitable(const PhysicalDevice &physical_device, const std::vector<const char *> &device_extensions)
+bool Instance::is_physical_device_suitable(const PhysicalDevice &physical_device, const std::vector<const char *> &device_extensions, vk::PhysicalDeviceFeatures2 &required_features)
 {
 	const auto &indices                 = physical_device.get_queue_family_indices();
-	bool        is_extensions_supported = physical_device.is_all_extensions_supported(device_extensions);
+	bool        is_extensions_supported = physical_device.is_extensions_supported(device_extensions);
 	bool        is_swap_chain_supported = false;
 	if (is_extensions_supported)
 	{
 		const auto &details     = physical_device.get_swapchain_support_details();
 		is_swap_chain_supported = !details.formats.empty() && !details.present_modes.empty();
 	}
-	auto supportedFeatures = physical_device.get_handle().getFeatures();
+
+	physical_device.get_handle().getFeatures2(&required_features);
 
 	return indices.is_complete() && is_extensions_supported && is_swap_chain_supported &&
-	       supportedFeatures.samplerAnisotropy;
+	       required_features.features.samplerAnisotropy;
 }
 
 const vk::SurfaceKHR &Instance::get_surface() const

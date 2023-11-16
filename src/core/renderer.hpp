@@ -8,6 +8,7 @@
 #include "core/sampler.hpp"
 #include "device_memory/buffer.hpp"
 #include "pbr_baker.hpp"
+#include "ray_tracing/as_builder.hpp"
 #include "scene_graph/components/skin.hpp"
 #include "sync_objects.hpp"
 
@@ -27,6 +28,7 @@ class Swapchain;
 class RenderPass;
 class SwapchainFramebuffer;
 class PipelineResource;
+class AccelerationStructure;
 
 struct DescriptorState;
 struct Event;
@@ -53,6 +55,14 @@ class Renderer
 		Fence             in_flight_fence;
 		vk::DescriptorSet pbr_set;
 		vk::DescriptorSet skybox_set;
+	};
+
+	struct RaytraceResource
+	{
+		std::vector<std::unique_ptr<AccelerationStructure>> p_BLASs;
+		std::unique_ptr<AccelerationStructure>              p_TLAS;
+		std::array<vk::DescriptorSetLayout, 4>              desc_layout_ring;
+		vk::DescriptorSet                                   global_set;
 	};
 
 	struct PipelineResource
@@ -128,6 +138,11 @@ class Renderer
 	void create_render_pass();
 	void create_pipeline_resources();
 
+	void create_raytrace_resources();
+	void create_storage_image();
+	void create_ASs();
+	void create_raytrace_descriptor_resources();
+
 	std::unique_ptr<Window>               p_window_;
 	std::unique_ptr<Context>              p_ctx_;
 	std::unique_ptr<Swapchain>            p_swapchain_;
@@ -136,6 +151,7 @@ class Renderer
 	std::unique_ptr<DescriptorState>      p_descriptor_state_;
 	std::unique_ptr<CommandPool>          p_cmd_pool_;
 	std::unique_ptr<sg::Scene>            p_scene_;
+	std::unique_ptr<ImageResource>        p_storage_img_;
 	sg::Node                             *p_camera_node_ = nullptr;
 
 	Timer                      timer_;
@@ -143,6 +159,7 @@ class Renderer
 	std::vector<FrameResource> frame_resources_;
 	PipelineResource           skybox_;
 	PipelineResource           pbr_;
+	RaytraceResource           raytrace_;
 	PBR                        baked_pbr_;
 	bool                       is_window_resized_ = false;
 };

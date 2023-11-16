@@ -3,10 +3,11 @@
 #include "command_buffer.hpp"
 #include "common/utils.hpp"
 #include "device.hpp"
+#include "queue.hpp"
 
 namespace mz
 {
-CommandPool::CommandPool(Device &device, const vk::Queue &queue, uint32_t queue_family_index, CommandPoolResetStrategy strategy, vk::CommandPoolCreateFlags flags) :
+CommandPool::CommandPool(Device &device, const Queue &queue, CommandPoolResetStrategy strategy, vk::CommandPoolCreateFlags flags) :
     device_(device),
     queue_(queue),
     strategy_(strategy)
@@ -14,7 +15,7 @@ CommandPool::CommandPool(Device &device, const vk::Queue &queue, uint32_t queue_
 {
 	vk::CommandPoolCreateInfo pool_cinfo{
 	    .flags            = flags,
-	    .queueFamilyIndex = queue_family_index,
+	    .queueFamilyIndex = queue_.get_family_idx(),
 	};
 	handle_ = device_.get_handle().createCommandPool(pool_cinfo);
 
@@ -110,7 +111,7 @@ CommandPoolResetStrategy CommandPool::get_reset_strategy()
 	return strategy_;
 }
 
-const vk::Queue &CommandPool::get_queue()
+const Queue &CommandPool::get_queue()
 {
 	return queue_;
 }

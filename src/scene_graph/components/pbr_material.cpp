@@ -2,8 +2,8 @@
 
 namespace mz::sg
 {
-PBRMaterial::PBRMaterial(const std::string &name) :
-    Material(name)
+PBRMaterial::PBRMaterial(const std::string &name, size_t id) :
+    Material(name, id)
 {
 }
 

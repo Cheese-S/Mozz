@@ -49,8 +49,8 @@ std::array<vk::VertexInputAttributeDescription, 6> Vertex::get_input_attr_descri
 	return descriptions;
 };
 
-SubMesh::SubMesh(const std::string &name) :
-    Component(name)
+SubMesh::SubMesh(const std::string &name, size_t id) :
+    Component(name, id)
 {
 }
 

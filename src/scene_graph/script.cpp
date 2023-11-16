@@ -2,8 +2,8 @@
 
 namespace mz::sg
 {
-Script::Script(const std::string &name) :
-    Component(name){};
+Script::Script(const std::string &name, size_t id) :
+    Component(name, id){};
 
 std::type_index Script::get_type()
 {
@@ -18,8 +18,8 @@ void Script::resize(uint32_t width, uint32_t height)
 {
 }
 
-NodeScript::NodeScript(Node &node, const std::string &name) :
-    Script(name),
+NodeScript::NodeScript(Node &node, const std::string &name, size_t id) :
+    Script(name, id),
     node_(node)
 {
 }

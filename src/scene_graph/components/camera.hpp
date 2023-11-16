@@ -9,7 +9,7 @@ class Node;
 class Camera : public Component
 {
   public:
-	Camera(const std::string &name);
+	Camera(const std::string &name, size_t id);
 	virtual ~Camera() = default;
 	virtual std::type_index get_type() override;
 

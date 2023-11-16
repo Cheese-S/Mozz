@@ -5,8 +5,8 @@
 
 namespace mz::sg
 {
-Camera::Camera(const std::string &name) :
-    Component(name)
+Camera::Camera(const std::string &name, size_t id) :
+    Component(name, id)
 {
 }
 

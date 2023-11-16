@@ -23,6 +23,7 @@ class Scene
   public:
 	Scene() = default;
 	Scene(const std::string &name);
+	Scene(Scene &&rhs);
 
 	void add_component(std::unique_ptr<Component> &&pComponent);
 	template <typename T>

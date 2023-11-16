@@ -16,7 +16,7 @@ namespace sg
 class Image : public Component
 {
   public:
-	Image(ImageResource &&resrc, const std::string &name);
+	Image(ImageResource &&resrc, const std::string &name, size_t id);
 	Image(Image &&);
 
 	virtual ~Image() = default;

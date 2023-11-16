@@ -77,7 +77,7 @@ struct AnimationChannel
 class Animation : public Script
 {
   public:
-	Animation(const std::string &name = "");
+	Animation(const std::string &name, size_t id);
 
 	void update(float delta_time) override;
 

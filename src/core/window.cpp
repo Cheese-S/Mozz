@@ -6,6 +6,7 @@
 
 #include "GLFW/glfw3.h"
 #include "instance.hpp"
+#include "ray_tracer.hpp"
 #include "renderer.hpp"
 #include "scene_graph/event.hpp"
 
@@ -81,6 +82,50 @@ inline MouseButton translate_mouse_button(int button)
 		return MouseButton::eMiddle;
 	}
 	return MouseButton::eUnknown;
+}
+
+void raytracer_resize_callback(GLFWwindow *p_window, int width, int height)
+{
+	ResizeEvent event;
+	Raytracer  *p_raytracer = reinterpret_cast<Raytracer *>(glfwGetWindowUserPointer(p_window));
+	p_raytracer->process_event(event);
+}
+
+void raytracer_key_callback(GLFWwindow *p_window, int key, int scancode, int action, int mods)
+{
+	KeyCode    key_code    = translate_key_code(key);
+	KeyAction  key_action  = translate_key_action(action);
+	Raytracer *p_raytracer = reinterpret_cast<Raytracer *>(glfwGetWindowUserPointer(p_window));
+
+	p_raytracer->process_event(KeyEvent(key_code, key_action));
+}
+
+void raytracer_mouse_button_callback(GLFWwindow *p_window, int button, int action, int mods)
+{
+	MouseAction mouse_action = translate_mouse_action(action);
+	MouseButton mouse_button = translate_mouse_button(button);
+
+	double xpos, ypos;
+	glfwGetCursorPos(p_window, &xpos, &ypos);
+
+	auto p_Raytracer = reinterpret_cast<Raytracer *>(glfwGetWindowUserPointer(p_window));
+	p_Raytracer->process_event(MouseButtonEvent{
+	    mouse_button,
+	    mouse_action,
+	    static_cast<float>(xpos),
+	    static_cast<float>(ypos)});
+}
+
+void raytracer_cursor_position_callback(GLFWwindow *p_window, double xpos, double ypos)
+{
+	auto p_Raytracer = reinterpret_cast<Raytracer *>(glfwGetWindowUserPointer(p_window));
+	p_Raytracer->process_event(MouseButtonEvent{MouseButton::eUnknown, MouseAction::eMove, static_cast<float>(xpos), static_cast<float>(ypos)});
+}
+
+void raytracer_scroll_callback(GLFWwindow *p_window, double x_offset, double y_offset)
+{
+	auto p_Raytracer = reinterpret_cast<Raytracer *>(glfwGetWindowUserPointer(p_window));
+	p_Raytracer->process_event(ScrollEvent(x_offset, y_offset));
 }
 
 void resize_callback(GLFWwindow *p_window, int width, int height)
@@ -161,6 +206,16 @@ void Window::register_callbacks(Renderer &renderer)
 	glfwSetMouseButtonCallback(handle_, mouse_button_callback);
 	glfwSetCursorPosCallback(handle_, cursor_position_callback);
 	glfwSetScrollCallback(handle_, scroll_callback);
+}
+
+void Window::register_callbacks(Raytracer &raytracer)
+{
+	glfwSetWindowUserPointer(handle_, &raytracer);
+	glfwSetFramebufferSizeCallback(handle_, raytracer_resize_callback);
+	glfwSetKeyCallback(handle_, raytracer_key_callback);
+	glfwSetMouseButtonCallback(handle_, raytracer_mouse_button_callback);
+	glfwSetCursorPosCallback(handle_, raytracer_cursor_position_callback);
+	glfwSetScrollCallback(handle_, raytracer_scroll_callback);
 }
 
 vk::SurfaceKHR Window::create_surface(Instance &instance)

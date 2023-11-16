@@ -9,8 +9,8 @@ inline glm::vec3 compute_cubic_spline(const std::vector<glm::vec3> &outputs, siz
 
 inline glm::quat compute_cubic_spline(const std::vector<glm::quat> &outputs, size_t i, float interp_val, float delta);
 
-Animation::Animation(const std::string &name) :
-    Script(name)
+Animation::Animation(const std::string &name, size_t id) :
+    Script(name, id)
 {
 }
 

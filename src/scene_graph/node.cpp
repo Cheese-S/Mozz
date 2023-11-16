@@ -2,7 +2,7 @@
 
 namespace mz::sg
 {
-Node::Node(const size_t id, const std::string &name) :
+Node::Node(const std::string &name, size_t id) :
     id_(id),
     name_(name),
     T_(*this)

@@ -10,6 +10,7 @@ AABB::AABB()
 }
 
 AABB::AABB(const glm::vec3 &min, const glm::vec3 &max) :
+    Component("", -1),
     min_(min),
     max_(max)
 {

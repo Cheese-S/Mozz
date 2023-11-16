@@ -7,6 +7,7 @@ namespace mz
 {
 
 class Device;
+class Queue;
 class CommandBuffer;
 
 enum class CommandPoolResetStrategy
@@ -18,7 +19,7 @@ enum class CommandPoolResetStrategy
 class CommandPool : public VulkanObject<vk::CommandPool>
 {
   public:
-	CommandPool(Device &device, const vk::Queue &queue, uint32_t queue_family_index, CommandPoolResetStrategy strategy = CommandPoolResetStrategy::eIndividual, vk::CommandPoolCreateFlags flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+	CommandPool(Device &device, const Queue &queue, CommandPoolResetStrategy strategy = CommandPoolResetStrategy::eIndividual, vk::CommandPoolCreateFlags flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
 	~CommandPool() override;
 
@@ -30,12 +31,12 @@ class CommandPool : public VulkanObject<vk::CommandPool>
 
 	void                     reset();
 	CommandPoolResetStrategy get_reset_strategy();
-	const vk::Queue         &get_queue();
+	const Queue             &get_queue();
 	const Device            &get_device();
 
   private:
 	Device                    &device_;
-	const vk::Queue           &queue_;
+	const Queue               &queue_;
 	std::vector<CommandBuffer> primary_cmd_bufs_;
 	std::vector<CommandBuffer> secondary_cmd_bufs_;
 	CommandPoolResetStrategy   strategy_;

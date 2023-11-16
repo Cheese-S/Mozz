@@ -16,6 +16,7 @@ struct Extent2D;
 
 namespace mz
 {
+class Raytracer;
 class Renderer;
 class Instance;
 class Window
@@ -30,6 +31,7 @@ class Window
 	~Window();
 
 	void           register_callbacks(Renderer &renderer);
+	void           register_callbacks(Raytracer &raytracer);
 	vk::SurfaceKHR create_surface(Instance &instance);
 	vk::Extent2D   wait_for_non_zero_extent();
 	bool           should_close();

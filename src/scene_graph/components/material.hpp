@@ -17,7 +17,7 @@ class Texture;
 class Material : public Component
 {
   public:
-	Material(const std::string &name);
+	Material(const std::string &name, size_t id);
 	Material(Material &&other) = default;
 	virtual ~Material()        = default;
 	virtual std::type_index get_type() override;

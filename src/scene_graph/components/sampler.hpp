@@ -13,7 +13,7 @@ namespace sg
 class Sampler : public Component
 {
   public:
-	Sampler(const Device &device, const std::string &name, vk::SamplerCreateInfo &sampler_cinfo);
+	Sampler(const Device &device, const std::string &name, size_t id, vk::SamplerCreateInfo &sampler_cinfo);
 
 	virtual ~Sampler() override = default;
 	virtual std::type_index get_type() override;

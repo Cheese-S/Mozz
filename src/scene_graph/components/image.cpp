@@ -8,14 +8,14 @@
 namespace mz::sg
 {
 
-Image::Image(ImageResource &&resource, const std::string &name) :
-    Component(name),
+Image::Image(ImageResource &&resource, const std::string &name, size_t id) :
+    Component(name, id),
     resource_(std::move(resource))
 {
 }
 
 Image::Image(Image &&rhs) :
-    Component(rhs.get_name()),
+    Component(std::move(rhs)),
     resource_(std::move(rhs.resource_))
 {
 }

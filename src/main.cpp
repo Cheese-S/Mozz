@@ -4,13 +4,15 @@
 #include <iostream>
 
 #include "core/renderer.hpp"
+#include "ray_tracer.hpp"
 
 int main()
 {
-	mz::Renderer renderer;
+	mz::Raytracer raytracer;
+	// mz::Renderer renderer;
 	try
 	{
-		renderer.start();
+		raytracer.start();
 	}
 	catch (const std::exception &e)
 	{

@@ -3,8 +3,8 @@
 namespace mz::sg
 {
 
-Mesh::Mesh(const std::string &name) :
-    Component(name){};
+Mesh::Mesh(const std::string &name, size_t id) :
+    Component(name, id){};
 
 void Mesh::add_submesh(SubMesh &submesh)
 {

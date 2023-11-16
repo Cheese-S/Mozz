@@ -24,11 +24,12 @@ class Instance : public VulkanObject<vk::Instance>
 	Instance(Instance &&)                 = delete;
 	Instance &operator=(Instance &&)      = delete;
 
-	PhysicalDevice pick_physical_device(const std::vector<const char *> &device_extensions);
+	PhysicalDevice pick_physical_device(const std::vector<const char *> &device_extensions, vk::PhysicalDeviceFeatures2 &required_features);
 
 	const vk::SurfaceKHR &get_surface() const;
 
   private:
+	void                      init_dispatcher();
 	void                      create_instance(const std::string &app_name);
 	bool                      is_validation_layer_supported();
 	std::vector<const char *> get_required_extensions();
@@ -40,7 +41,7 @@ class Instance : public VulkanObject<vk::Instance>
 	     debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
 	                    VkDebugUtilsMessageTypeFlagsEXT             messageType,
 	                    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
-	bool is_physical_device_suitable(const PhysicalDevice &device, const std::vector<const char *> &device_extensions);
+	bool is_physical_device_suitable(const PhysicalDevice &device, const std::vector<const char *> &device_extensions, vk::PhysicalDeviceFeatures2 &required_features);
 
 	vk::SurfaceKHR             surface_         = nullptr;
 	vk::DebugUtilsMessengerEXT debug_messenger_ = nullptr;

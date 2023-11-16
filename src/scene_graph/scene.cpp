@@ -10,6 +10,15 @@ Scene::Scene(const std::string &name) :
 {
 }
 
+Scene::Scene(Scene &&rhs) :
+    name_(std::move(rhs.name_)),
+    root_(rhs.root_),
+    bound_(rhs.bound_.get_min(), rhs.bound_.get_max()),
+    p_nodes_(std::move(rhs.p_nodes_)),
+    p_components_(std::move(rhs.p_components_))
+{
+}
+
 void Scene::add_node(std::unique_ptr<Node> &&pNode)
 {
 	p_nodes_.emplace_back(std::move(pNode));

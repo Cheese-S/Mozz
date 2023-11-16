@@ -16,8 +16,8 @@ const float FreeCamera::TRANSLATION_MOVE_WEIGHT = 10.0f;
 
 const uint32_t FreeCamera::TRANSLATION_MOVE_SPEED = 4;
 
-FreeCamera::FreeCamera(Node &node) :
-    NodeScript(node, "FreeCamera")
+FreeCamera::FreeCamera(Node &node, size_t id) :
+    NodeScript(node, "FreeCamera", id)
 {
 }
 

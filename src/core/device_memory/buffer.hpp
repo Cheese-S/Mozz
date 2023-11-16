@@ -24,6 +24,12 @@ class Buffer : public DeviceMemoryObject<vk::Buffer>
 	void update(const std::vector<uint8_t> &binary, size_t offset = 0);
 	void update(const uint8_t *p_data, size_t size, size_t offset = 0);
 
+	template <typename T>
+	void update(std::vector<T> &vec)
+	{
+		update(vec.data(), sizeof(T) * vec.size());
+	}
+
   private:
 	void map();
 	void unmap();

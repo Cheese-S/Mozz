@@ -7,8 +7,8 @@
 
 namespace mz::sg
 {
-Skin::Skin(const std::string &name) :
-    Component(name){};
+Skin::Skin(const std::string &name, size_t id) :
+    Component(name, id){};
 
 void Skin::compute_joint_Ms(sg::Scene &scene, glm::mat4 *p_joint_Ms) const
 {

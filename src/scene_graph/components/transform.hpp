@@ -5,12 +5,18 @@
 #include "common/glm_common.hpp"
 #include "scene_graph/component.hpp"
 
+namespace vk
+{
+struct TransformMatrixKHR;
+}
+
 namespace mz::sg
 {
 class Node;
 class Transform : public Component
 {
   public:
+	static vk::TransformMatrixKHR to_vk_transform(glm::mat4 m);
 	Transform(Node &node);
 	virtual ~Transform() = default;
 	virtual std::type_index get_type() override;

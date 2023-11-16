@@ -25,6 +25,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/tiny_gltf.cpp
     src/pbr_baker.cpp
     src/pbr_baker.hpp
+    src/ray_tracer.hpp
+    src/ray_tracer.cpp
 
     src/common/cvar.cpp
     src/common/cvar.hpp
@@ -38,6 +40,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/common/utils.cpp
     src/common/utils.hpp
     src/common/vk_common.hpp
+    src/common/vk_common.cpp
 
     src/core/context.cpp
     src/core/context.hpp
@@ -76,6 +79,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/core/swapchain.hpp
     src/core/sync_objects.cpp
     src/core/sync_objects.hpp
+    src/core/queue.cpp
+    src/core/queue.hpp
     src/core/vulkan_object.hpp
     src/core/window.cpp
     src/core/window.hpp
@@ -128,6 +133,13 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/scene_graph/scripts/arc_ball_camera.hpp
     src/scene_graph/scripts/animation.cpp
     src/scene_graph/scripts/animation.hpp
+
+    src/ray_tracing/as_builder.hpp
+    src/ray_tracing/as_builder.cpp
+    src/ray_tracing/acceleration_structure.hpp
+    src/ray_tracing/acceleration_structure.cpp
+    src/ray_tracing/ray_tracing_pipeline.hpp
+    src/ray_tracing/ray_tracing_pipeline.cpp
 )
 
 set_target_properties(${PROJECT_NAME}
@@ -141,7 +153,6 @@ if (MINGW)
     target_include_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/include)
     target_link_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/lib)
 endif()
-
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

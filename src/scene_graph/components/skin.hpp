@@ -15,7 +15,7 @@ class Skin : public Component
 {
   public:
 	static const int MAX_NUM_JOINTS = 256;
-	Skin(const std::string &name = "");
+	Skin(const std::string &name, size_t id);
 
 	void                                   compute_joint_Ms(sg::Scene &scene, glm::mat4 *p_joint_Ms) const;
 	void                                   add_new_joint(int joint_id, uint32_t node_id);

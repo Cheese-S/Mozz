@@ -2,8 +2,8 @@
 
 namespace mz::sg
 {
-Material::Material(const std::string &name) :
-    Component(name)
+Material::Material(const std::string &name, size_t id) :
+    Component(name, id)
 {
 }
 

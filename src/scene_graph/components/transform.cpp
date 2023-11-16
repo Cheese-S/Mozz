@@ -1,12 +1,24 @@
 #include "transform.hpp"
 
+#include "common/vk_common.hpp"
 #include <glm/gtx/matrix_decompose.hpp>
 
 #include "scene_graph/node.hpp"
 
 namespace mz::sg
 {
+
+vk::TransformMatrixKHR Transform::to_vk_transform(glm::mat4 m)
+{
+	// glm is column major, vk::TransformMatrix is row major
+	glm::mat4              transpose = glm::transpose(m);
+	vk::TransformMatrixKHR T;
+	memcpy(&T, &transpose, sizeof(T));
+	return T;
+}
+
 Transform::Transform(Node &node) :
+    Component("", -1),
     node_(node)
 {
 }

@@ -4,8 +4,8 @@
 
 namespace mz::sg
 {
-Texture::Texture(const std::string &name) :
-    Component(name)
+Texture::Texture(const std::string &name, size_t id) :
+    Component(name, id)
 {
 }
 
