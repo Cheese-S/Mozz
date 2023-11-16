@@ -1,7 +1,7 @@
 [submodule "external/tinygltf"]
 path = external/tinygltf
 url = git@github.com:syoyo/tinygltf.git
-ignore = untracked
+ignore = dirty
 [submodule "external/glm"]
 path = external/glm
 url = git@github.com:g-truc/glm.git
