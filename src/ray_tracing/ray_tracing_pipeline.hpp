@@ -15,8 +15,9 @@ class RaytracingPipeline : public VulkanObject<vk::Pipeline>
 	{
 		eRaygen           = 0,
 		eMiss             = 1,
-		eClosestHit       = 2,
-		eShaderGroupCount = 3,
+		eShadow           = 2,
+		eClosestHit       = 3,
+		eShaderGroupCount = 4,
 	};
 
 	RaytracingPipeline(Device &device, std::array<const char *, eShaderGroupCount> &shader_names, vk::PipelineLayoutCreateInfo &pl_layout_cinfo);

@@ -47,28 +47,12 @@ Raytracer::Raytracer()
 {
 	p_window_ = std::make_unique<Window>("Wolfie3D");
 	p_window_->register_callbacks(*this);
+	create_context();
 
-	vk::StructureChain<vk::PhysicalDeviceFeatures2,
-	                   vk::PhysicalDeviceBufferDeviceAddressFeatures>
-	    requested_features;
-
-	ContextCreateInfo ctx_cinfo{
-	    .app_name           = "Wolfie3D",
-	    .device_extensions  = {},
-	    .requested_features = requested_features.get<vk::PhysicalDeviceFeatures2>(),
-	    .window             = *p_window_,
-	};
-
-	for (const char *extension_name : Device::REQUIRED_EXTENSIONS)
-	{
-		ctx_cinfo.device_extensions.push_back(extension_name);
-	}
-
-	p_ctx_              = std::make_unique<Context>(ctx_cinfo);
 	p_descriptor_state_ = std::make_unique<DescriptorState>(p_ctx_->device);
 	p_cmd_pool_         = std::make_unique<CommandPool>(p_ctx_->device, p_ctx_->device.get_graphics_queue());
 	p_swapchain_        = std::make_unique<Swapchain>(*p_ctx_, p_window_->get_extent());
-	load_scene("2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
+	load_scene("2.0/ToyCar/glTF/ToyCar.gltf");
 	create_rendering_resources();
 	create_pbr_resource();
 	create_raytrace_resources();
@@ -364,6 +348,60 @@ void Raytracer::create_pbr_resource()
 	baked_pbr_ = baker.bake();
 }
 
+void Raytracer::create_context()
+{
+	vk::StructureChain<
+	    vk::PhysicalDeviceFeatures2,
+	    vk::PhysicalDeviceAccelerationStructureFeaturesKHR,
+	    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR,
+	    vk::PhysicalDeviceBufferDeviceAddressFeatures,
+	    vk::PhysicalDeviceHostQueryResetFeatures,
+	    vk::PhysicalDeviceDescriptorIndexingFeatures>
+	    requested_features;
+
+	ContextCreateInfo ctx_cinfo{
+	    .app_name           = "Wolfie3D",
+	    .device_extensions  = {},
+	    .requested_features = requested_features.get<vk::PhysicalDeviceFeatures2>(),
+	    .window             = *p_window_,
+	};
+
+	for (const char *extension_name : Device::REQUIRED_EXTENSIONS)
+	{
+		ctx_cinfo.device_extensions.push_back(extension_name);
+	}
+
+	for (const char *extension_name : Device::RAY_TRACING_EXTENSIONS)
+	{
+		ctx_cinfo.device_extensions.push_back(extension_name);
+	}
+
+	auto &core_features                      = requested_features.get<vk::PhysicalDeviceFeatures2>();
+	core_features.features.samplerAnisotropy = true;
+	core_features.features.sampleRateShading = true;
+	core_features.features.shaderInt64       = true;
+
+	auto &acc_struct_features                 = requested_features.get<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>();
+	acc_struct_features.accelerationStructure = true;
+
+	auto &ray_tracing_ppl_features              = requested_features.get<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR>();
+	ray_tracing_ppl_features.rayTracingPipeline = true;
+
+	auto &device_address_features               = requested_features.get<vk::PhysicalDeviceBufferDeviceAddressFeatures>();
+	device_address_features.bufferDeviceAddress = true;
+
+	auto &host_query_reset_features          = requested_features.get<vk::PhysicalDeviceHostQueryResetFeatures>();
+	host_query_reset_features.hostQueryReset = true;
+
+	auto &desc_index_feautres                                     = requested_features.get<vk::PhysicalDeviceDescriptorIndexingFeatures>();
+	desc_index_feautres.runtimeDescriptorArray                    = true;
+	desc_index_feautres.shaderSampledImageArrayNonUniformIndexing = true;
+	desc_index_feautres.descriptorBindingVariableDescriptorCount  = true;
+	desc_index_feautres.descriptorBindingPartiallyBound           = true;
+
+	p_ctx_ = std::make_unique<Context>(ctx_cinfo);
+}
+
 void Raytracer::create_raytrace_resources()
 {
 	create_storage_image();
@@ -373,27 +411,33 @@ void Raytracer::create_raytrace_resources()
 	created_shader_binding_table();
 }
 
-void Raytracer::create_rendering_resources()
+void Raytracer::create_storage_image()
 {
-	create_frame_resources();
-	// create_descriptor_resources();
-	// create_render_pass();
-	// create_pipeline_resources();
-}
+	vk::Extent2D        extent = p_swapchain_->get_swapchain_properties().extent;
+	vk::ImageCreateInfo img_cinfo{
+	    .imageType = vk::ImageType::e2D,
+	    .format    = vk::Format::eB8G8R8A8Unorm,
+	    .extent    = {
+	           .width  = extent.width,
+	           .height = extent.height,
+	           .depth  = 1,
+        },
+	    .mipLevels   = 1,
+	    .arrayLayers = 1,
+	    .samples     = vk::SampleCountFlagBits::e1,
+	    .tiling      = vk::ImageTiling::eOptimal,
+	    .usage       = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage,
+	};
 
-void Raytracer::create_frame_resources()
-{
-	Device &device = p_ctx_->device;
-	for (uint32_t i = 0; i < NUM_INFLIGHT_FRAMES; i++)
-	{
-		frame_resources_.push_back({
-		    .cmd_buf                   = std::move(p_cmd_pool_->allocate_command_buffer()),
-		    .camera_buf                = std::move(device.get_device_memory_allocator().allocate_uniform_buffer(sizeof(RTCameraUBO))),
-		    .image_avaliable_semaphore = std::move(Semaphore(device)),
-		    .render_finished_semaphore = std::move(Semaphore(device)),
-		    .in_flight_fence           = std::move(Fence(device, vk::FenceCreateFlagBits::eSignaled)),
-		});
-	}
+	Image img = p_ctx_->device.get_device_memory_allocator().allocate_device_only_image(img_cinfo);
+
+	vk::ImageViewCreateInfo view_cinfo = ImageView::two_dim_view_cinfo(img.get_handle(), vk::Format::eB8G8R8A8Unorm, vk::ImageAspectFlagBits::eColor, 1);
+
+	p_storage_img_ = std::make_unique<ImageResource>(std::move(img), ImageView(p_ctx_->device, view_cinfo));
+
+	CommandBuffer cmd_buf = p_ctx_->device.begin_one_time_buf();
+	cmd_buf.set_image_layout(*p_storage_img_, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
+	p_ctx_->device.end_one_time_buf(cmd_buf);
 }
 
 void Raytracer::create_ASs()
@@ -430,6 +474,29 @@ void Raytracer::create_ASs()
 	raytrace_.p_TLAS = std::make_unique<AccelerationStructure>(builder.build_TLASs(tlas, vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace));
 }
 
+void Raytracer::create_rendering_resources()
+{
+	create_frame_resources();
+	// create_descriptor_resources();
+	// create_render_pass();
+	// create_pipeline_resources();
+}
+
+void Raytracer::create_frame_resources()
+{
+	Device &device = p_ctx_->device;
+	for (uint32_t i = 0; i < NUM_INFLIGHT_FRAMES; i++)
+	{
+		frame_resources_.push_back({
+		    .cmd_buf                   = std::move(p_cmd_pool_->allocate_command_buffer()),
+		    .camera_buf                = std::move(device.get_device_memory_allocator().allocate_uniform_buffer(sizeof(RTCameraUBO))),
+		    .image_avaliable_semaphore = std::move(Semaphore(device)),
+		    .render_finished_semaphore = std::move(Semaphore(device)),
+		    .in_flight_fence           = std::move(Fence(device, vk::FenceCreateFlagBits::eSignaled)),
+		});
+	}
+}
+
 void Raytracer::create_raytrace_descriptor_resources()
 {
 	create_scene_ubos();
@@ -444,20 +511,22 @@ void Raytracer::create_scene_ubos()
 
 void Raytracer::create_material_ubo()
 {
-	std::vector<sg::PBRMaterial *> p_materials = p_scene_->get_components<sg::PBRMaterial>();
+	sg::Texture                   *default_texture = p_scene_->get_components<sg::Texture>().back();
+	std::vector<sg::PBRMaterial *> p_materials     = p_scene_->get_components<sg::PBRMaterial>();
 	std::vector<Material>          materials;
 	materials.reserve(p_materials.size());
+
 	for (size_t i = 0; i < p_materials.size(); i++)
 	{
 		sg::PBRMaterial *p_material = p_materials[i];
 		Material         mat{
 		            .base_color                     = p_material->base_color_factor_,
-		            .metallic_roughness             = glm::vec4{0.0, p_material->metallic_factor, p_material->roughness_factor, 0.0},
-		            .albedo_texture_idx             = p_material->texture_map_["base_color_texture"]->get_id(),
-		            .normal_texture_idx             = p_material->texture_map_["normal_texture"]->get_id(),
-		            .occlusion_texture_idx          = p_material->texture_map_["occlusion_texture"]->get_id(),
-		            .emissive_texture_idx           = p_material->texture_map_["emissive_texture"]->get_id(),
-		            .metallic_roughness_texture_idx = p_material->texture_map_["metallic_roughness_texture"]->get_id(),
+		            .metallic_roughness             = glm::vec4{0.0, p_material->roughness_factor, p_material->metallic_factor, 0.0},
+		            .albedo_texture_idx             = p_material->texture_map_.count("base_color_texture") ? p_material->texture_map_["base_color_texture"]->get_id() : default_texture->get_id(),
+		            .normal_texture_idx             = p_material->texture_map_.count("normal_texture") ? p_material->texture_map_["normal_texture"]->get_id() : default_texture->get_id(),
+		            .occlusion_texture_idx          = p_material->texture_map_.count("occlusion_texture") ? p_material->texture_map_["occlusion_texture"]->get_id() : default_texture->get_id(),
+		            .emissive_texture_idx           = p_material->texture_map_.count("emissive_texture") ? p_material->texture_map_["emissive_texture"]->get_id() : default_texture->get_id(),
+		            .metallic_roughness_texture_idx = p_material->texture_map_.count("metallic_roughness_texture") ? p_material->texture_map_["metallic_roughness_texture"]->get_id() : default_texture->get_id(),
         };
 		materials.push_back(mat);
 	}
@@ -544,6 +613,7 @@ void Raytracer::create_raytrace_descriptors()
 	for (sg::Texture *p_texture : p_textures)
 	{
 		texture_img_dinfos.push_back(vk::DescriptorImageInfo{
+		    .sampler     = p_texture->p_sampler_->get_handle(),
 		    .imageView   = p_texture->p_resource_->get_view().get_handle(),
 		    .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
 		});
@@ -555,15 +625,14 @@ void Raytracer::create_raytrace_descriptors()
 
 	DescriptorAllocation global_set_allocation =
 	    DescriptorBuilder::begin(p_descriptor_state_->cache, p_descriptor_state_->allocator)
-	        .bind_tlas(0, as_write, vk::DescriptorType::eAccelerationStructureKHR, vk::ShaderStageFlagBits::eRaygenKHR)
+	        .bind_tlas(0, as_write, vk::DescriptorType::eAccelerationStructureKHR, vk::ShaderStageFlagBits::eRaygenKHR | vk::ShaderStageFlagBits::eClosestHitKHR)
 	        .bind_image(1, storage_img_info, vk::DescriptorType::eStorageImage, vk::ShaderStageFlagBits::eRaygenKHR)
 	        .bind_buffer(2, material_ubo_info, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitKHR)
 	        .bind_buffer(3, submesh_ainfo_ubo_info, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitKHR)
-	        .bind_images(4, texture_img_dinfos, vk::DescriptorType::eSampledImage, vk::ShaderStageFlagBits::eClosestHitKHR)
-	        .bind_sampler(5, sampler_dinfo, vk::DescriptorType::eSampler, vk::ShaderStageFlagBits::eClosestHitKHR)
-	        .bind_image(6, irradiance, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eClosestHitKHR)
-	        .bind_image(7, prefilter, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eClosestHitKHR)
-	        .bind_image(8, brdf_lut, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eClosestHitKHR)
+	        .bind_image(4, irradiance, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eClosestHitKHR)
+	        .bind_image(5, prefilter, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eClosestHitKHR)
+	        .bind_image(6, brdf_lut, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eClosestHitKHR)
+	        .bind_unbounded_array(7, texture_img_dinfos, 1024, vk::ShaderStageFlagBits::eClosestHitKHR)
 	        .build();
 
 	raytrace_.global_set          = global_set_allocation.set;
@@ -588,40 +657,12 @@ void Raytracer::create_raytrace_descriptors()
 	}
 }
 
-void Raytracer::create_storage_image()
-{
-	vk::Extent2D        extent = p_swapchain_->get_swapchain_properties().extent;
-	vk::ImageCreateInfo img_cinfo{
-	    .imageType = vk::ImageType::e2D,
-	    .format    = vk::Format::eB8G8R8A8Unorm,
-	    .extent    = {
-	           .width  = extent.width,
-	           .height = extent.height,
-	           .depth  = 1,
-        },
-	    .mipLevels   = 1,
-	    .arrayLayers = 1,
-	    .samples     = vk::SampleCountFlagBits::e1,
-	    .tiling      = vk::ImageTiling::eOptimal,
-	    .usage       = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eStorage,
-	};
-
-	Image img = p_ctx_->device.get_device_memory_allocator().allocate_device_only_image(img_cinfo);
-
-	vk::ImageViewCreateInfo view_cinfo = ImageView::two_dim_view_cinfo(img.get_handle(), vk::Format::eB8G8R8A8Unorm, vk::ImageAspectFlagBits::eColor, 1);
-
-	p_storage_img_ = std::make_unique<ImageResource>(std::move(img), ImageView(p_ctx_->device, view_cinfo));
-
-	CommandBuffer cmd_buf = p_ctx_->device.begin_one_time_buf();
-	cmd_buf.set_image_layout(*p_storage_img_, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
-	p_ctx_->device.end_one_time_buf(cmd_buf);
-}
-
 void Raytracer::create_raytrace_pipeline()
 {
 	std::array<const char *, RaytracingPipeline::eShaderGroupCount> shader_names = {
 	    "raygen.rgen.spv",
 	    "miss.rmiss.spv",
+	    "shadow.rmiss.spv",
 	    "closesthit.rchit.spv",
 	};
 
@@ -645,7 +686,7 @@ void Raytracer::created_shader_binding_table()
 {
 	const vk::PhysicalDeviceRayTracingPipelinePropertiesKHR &props = p_ctx_->physical_device.get_ray_tracing_props();
 
-	uint32_t miss_cnt    = 1;
+	uint32_t miss_cnt    = 2;
 	uint32_t hit_cnt     = 1;
 	uint32_t handle_cnt  = 1 + miss_cnt + hit_cnt;
 	uint32_t handle_size = props.shaderGroupHandleSize;
@@ -677,12 +718,16 @@ void Raytracer::created_shader_binding_table()
 	size_t   offset   = 0;
 	raytrace_.p_sbt_buf->update(p_handle, handle_size, offset);
 
-	p_handle += handle_size;
-	offset += raytrace_.rgen_region.size;
-	raytrace_.p_sbt_buf->update(p_handle, handle_size, offset);
+	offset = raytrace_.rgen_region.size;
+	for (int i = 0; i < miss_cnt; i++)
+	{
+		p_handle += handle_size;
+		raytrace_.p_sbt_buf->update(p_handle, handle_size, offset);
+		offset += raytrace_.miss_region.stride;
+	}
 
 	p_handle += handle_size;
-	offset += raytrace_.miss_region.size;
+	offset = raytrace_.rgen_region.size + raytrace_.miss_region.size;
 	raytrace_.p_sbt_buf->update(p_handle, handle_size, offset);
 }
 

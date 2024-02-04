@@ -9,6 +9,8 @@
 
 #define PI 3.1415926535897932384626433832795
 
+const int UNDEFINED_TEXTURE = 1024;
+
 struct Material {
     vec4 base_color;
     vec4 metallic_roughness;
@@ -17,6 +19,7 @@ struct Material {
 	uint64_t  occlusion_texture_idx;
 	uint64_t  emissive_texture_idx;
 	uint64_t  metallic_roughness_texture_idx;
+    uint64_t pad;
 };
 
 struct SubmeshAccessInfo {
@@ -39,6 +42,8 @@ hitAttributeEXT vec2 attribs;
 
 layout(location = 0) rayPayloadInEXT vec3 hit_val;
 
+layout(location = 1) rayPayloadEXT bool is_shadowed;
+
 layout(buffer_reference, scalar) buffer Vertices {
     Vertex v[];
 };
@@ -47,21 +52,20 @@ layout(buffer_reference, scalar) buffer Indices {
     ivec3 i[]; 
 };
 
-layout(set = 0, binding = 2) buffer MaterialArray {
+layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas; 
+
+layout(set = 0, binding = 2, scalar) buffer MaterialArray {
     Material m[];
 } material_array;
 
-layout(set = 0, binding = 3) buffer SubmeshAccessInfoArray {
+layout(set = 0, binding = 3, scalar) buffer SubmeshAccessInfoArray {
     SubmeshAccessInfo m[];
 } submesh_access_array;
 
-layout(set = 0, binding = 4) uniform texture2D textures[];
-
-layout(set = 0, binding = 5) uniform sampler samp;
-
-layout(set = 0, binding = 6) uniform samplerCube irradiance_map;
-layout(set = 0, binding = 7) uniform samplerCube prefilter_map;
-layout(set = 0, binding = 8) uniform sampler2D brdf_map;
+layout(set = 0, binding = 4) uniform samplerCube irradiance_map;
+layout(set = 0, binding = 5) uniform samplerCube prefilter_map;
+layout(set = 0, binding = 6) uniform sampler2D brdf_map;
+layout(set = 0, binding = 7) uniform sampler2D textures[];
 
 
 
@@ -73,7 +77,6 @@ layout(push_constant) uniform PCO {
 
 const float OCCLUSION_STRENGTH = 0.5f;
 const float EMISSIVE_STRENGTH = 1.0f;
-
 
 
 vec3 get_normal(Vertex v0, Vertex v1, Vertex v2, vec3 tangent_normal, vec3 in_normal)
@@ -164,37 +167,63 @@ vec3 specular_contribution(vec3 L, vec3 V, vec3 N, vec3 F0, vec3 raw_color, floa
 }
 
 vec4 read_texture(int texture_idx, vec2 uv) {
-    return texture(sampler2D(textures[texture_idx], samp), uv);
+    return texture(textures[texture_idx], uv);
+}
+
+vec3 get_color(Material mat, vec2 uv) {
+    if (mat.albedo_texture_idx != UNDEFINED_TEXTURE) {
+        return read_texture(int(mat.albedo_texture_idx), uv).xyz;
+    }
+    return mat.base_color.xyz;
+}
+
+vec2 get_metallic_roughness(Material mat, vec2 uv) {
+    if (mat.metallic_roughness_texture_idx != UNDEFINED_TEXTURE) {
+        return read_texture(int(mat.metallic_roughness_texture_idx), uv).bg;
+    }
+    return mat.metallic_roughness.bg;
+}
+
+float get_ao(Material mat, vec2 uv) {
+    if (mat.occlusion_texture_idx != UNDEFINED_TEXTURE) {
+        return read_texture(int(mat.occlusion_texture_idx), uv).r;
+    }
+    return 1.0f;
+}
+
+vec3 get_emissive(Material mat, vec2 uv) {
+    if (mat.emissive_texture_idx != UNDEFINED_TEXTURE) {
+        return read_texture(int(mat.emissive_texture_idx), uv).rgb;
+    }
+    return vec3(0, 0, 0);
 }
 
 void  main() {
+    /* -------------------------------- UNPACKING ------------------------------- */
     SubmeshAccessInfo submesh_ainfo = submesh_access_array.m[gl_InstanceCustomIndexEXT];
     Vertices vertices = Vertices(submesh_ainfo.vert_buf_addr);
     Indices indices = Indices(submesh_ainfo.idx_buf_addr);
-    Material material = material_array.m[int(submesh_ainfo.material_idx)];
-    
-    ivec3 ind = indices.i[gl_PrimitiveID];
+    Material mat = material_array.m[int(submesh_ainfo.material_idx)];
+    vec3 barycentrics = vec3(1.0 - attribs.x - attribs.y, attribs.x, attribs.y);
 
+    ivec3 ind = indices.i[gl_PrimitiveID];
     Vertex v0 = vertices.v[ind.x];
     Vertex v1 = vertices.v[ind.y];
     Vertex v2 = vertices.v[ind.z];
 
-    vec3 barycentrics = vec3(1.0 - attribs.x - attribs.y, attribs.x, attribs.y);
-
     vec3 pos = v0.pos * barycentrics.x + v1.pos * barycentrics.y + v2.pos * barycentrics.z;
     vec3 world_pos = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0));
     vec2 uv = v0.uv * barycentrics.x + v1.uv * barycentrics.y + v2.uv * barycentrics.z;
-    vec3 in_normal = v0.norm * barycentrics.x + v1.norm * barycentrics.y + v2.norm * barycentrics.z;
+    vec3 norm = v0.norm * barycentrics.x + v1.norm * barycentrics.y + v2.norm * barycentrics.z;
 
-    in_normal = normalize(vec3(in_normal * gl_WorldToObjectEXT));
-    vec3 tangent_normal = texture(sampler2D(textures[int(material.normal_texture_idx)], samp), uv).xyz * 2.0 - 1.0;
-
+    vec3 in_normal = normalize(vec3(norm * gl_WorldToObjectEXT));
+    vec3 tangent_normal = read_texture(int(mat.normal_texture_idx), uv).xyz * 2.0 - 1.0;
 
     vec3 N = get_normal(v0, v1, v2, tangent_normal, in_normal);
     vec3 V = -normalize(gl_WorldRayDirectionEXT);
     vec3 R = reflect(-V, N);
-    vec3 raw_color = read_texture(int(material.albedo_texture_idx), uv).xyz;
-    vec2 metallic_roughness = read_texture(int(material.metallic_roughness_texture_idx), uv).bg;
+    vec3 raw_color = get_color(mat, uv);
+    vec2 metallic_roughness = get_metallic_roughness(mat, uv);
 
     float metallic = metallic_roughness.x;
     float roughness = metallic_roughness.y;
@@ -204,7 +233,38 @@ void  main() {
 
     vec3 light_pos = vec3(5.0, 5.0, 5.0);
     vec3 L = normalize(light_pos - world_pos);
-    vec3 Lo = specular_contribution(L, V, N, F0, raw_color, metallic, roughness);
+
+    float attenuation = 1;
+    vec3 Lo = vec3(0, 0, 0);
+    if (dot(N, L) > 0) {
+        float t_min = 0.001;
+        float t_max = distance(light_pos, world_pos);
+        vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+        vec3 ray_dir = L;
+        uint flags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
+        is_shadowed = true;
+        traceRayEXT(
+            tlas,
+            flags, 
+            0xFF,
+            0,
+            0,
+            1,
+            origin,
+            t_min,
+            ray_dir,
+            t_max,
+            1
+        );
+
+        if (is_shadowed) {
+            attenuation = 0.3;
+        } else {
+            Lo = specular_contribution(L, V, N, F0, raw_color, metallic, roughness);
+        }
+    }
+
+
 
     vec2 brdf = texture(brdf_map, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 reflection = prefilter_reflection(R, roughness).rgb;
@@ -214,7 +274,8 @@ void  main() {
 
     vec3 F = F_SchlickR(max(dot(N, V), 0.0), F0, roughness);
 
-    vec3 specular = reflection * (F * (brdf.x + brdf.y));
+    // vec3 specular = reflection * (F * (brdf.x + brdf.y));
+    vec3 specular = vec3(0,0,0);
 
     vec3 kD = 1.0 - F;
     kD *= 1.0 - metallic;
@@ -222,11 +283,11 @@ void  main() {
 
     vec3 color = ambient + Lo;
 
-    float ao = read_texture(int(material.occlusion_texture_idx), uv).r;
-    color = mix(color, color * ao, OCCLUSION_STRENGTH);
+    color = mix(color, color * get_ao(mat, uv), OCCLUSION_STRENGTH);
 
-    vec3 emissive = read_texture(int(material.emissive_texture_idx), uv).rgb;
-    color += emissive * EMISSIVE_STRENGTH;
+    color *= attenuation;
+
+    color += get_emissive(mat, uv);
 
     color = color / (color + vec3(1.0));
 

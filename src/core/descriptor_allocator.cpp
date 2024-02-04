@@ -135,8 +135,72 @@ DescriptorBuilder &DescriptorBuilder::bind_sampler(uint32_t binding, vk::Descrip
 	return *this;
 }
 
+DescriptorBuilder &DescriptorBuilder::bind_unbounded_array(uint32_t binding, std::vector<vk::DescriptorImageInfo> &image_infos, uint32_t max_count, vk::ShaderStageFlags flags)
+{
+	has_unbounded_array_ = true;
+	vk::DescriptorSetLayoutBinding new_layout_binding{
+	    .binding         = binding,
+	    .descriptorType  = vk::DescriptorType::eCombinedImageSampler,
+	    .descriptorCount = max_count,
+	    .stageFlags      = flags,
+	};
+	layout_bindings_.push_back(new_layout_binding);
+
+	vk::WriteDescriptorSet write{
+	    .dstBinding      = binding,
+	    .dstArrayElement = 0,
+	    .descriptorCount = to_u32(image_infos.size()),
+	    .descriptorType  = vk::DescriptorType::eCombinedImageSampler,
+	    .pImageInfo      = image_infos.data(),
+	};
+
+	writes_.push_back(write);
+	return *this;
+}
+
 DescriptorAllocation DescriptorBuilder::build()
 {
+	if (has_unbounded_array_)
+	{
+		vk::DescriptorBindingFlags flags[layout_bindings_.size()];
+		for (int i = 0; i < layout_bindings_.size() - 1; i++)
+		{
+			flags[i] = {};
+		}
+		flags[layout_bindings_.size() - 1] = vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::ePartiallyBound;
+
+		vk::DescriptorSetLayoutBindingFlagsCreateInfo binding_flags{
+		    .bindingCount  = to_u32(layout_bindings_.size()),
+		    .pBindingFlags = flags,
+		};
+
+		vk::DescriptorSetLayoutCreateInfo layout_cinfo{
+		    .pNext        = &binding_flags,
+		    .bindingCount = to_u32(layout_bindings_.size()),
+		    .pBindings    = layout_bindings_.data(),
+		};
+
+		vk::DescriptorSetLayout set_layout = layout_cache_.create_descriptor_layout(layout_cinfo);
+
+		uint32_t set_count = 1024;
+
+		vk::DescriptorSetVariableDescriptorCountAllocateInfo set_counts{
+		    .descriptorSetCount = 1,
+		    .pDescriptorCounts  = &set_count,
+		};
+
+		vk::DescriptorSet set = allocator_.allocate(set_layout, &set_counts);
+		for (auto &write : writes_)
+		{
+			write.dstSet = set;
+		}
+		allocator_.get_device().get_handle().updateDescriptorSets(writes_, {});
+		return {
+		    .set_layout = set_layout,
+		    .set        = set,
+		};
+	}
+
 	vk::DescriptorSetLayoutCreateInfo layout_cinfo{
 	    .bindingCount = to_u32(layout_bindings_.size()),
 	    .pBindings    = layout_bindings_.data(),
@@ -187,7 +251,7 @@ DescriptorAllocator::~DescriptorAllocator()
 	}
 }
 
-vk::DescriptorSet DescriptorAllocator::allocate(vk::DescriptorSetLayout &layout)
+vk::DescriptorSet DescriptorAllocator::allocate(vk::DescriptorSetLayout &layout, const void *p_next)
 {
 	if (!current_pool)
 	{
@@ -195,6 +259,7 @@ vk::DescriptorSet DescriptorAllocator::allocate(vk::DescriptorSetLayout &layout)
 		used_pools_.push_back(current_pool);
 	}
 	vk::DescriptorSetAllocateInfo descriptor_set_ainfo{
+	    .pNext              = p_next,
 	    .descriptorPool     = current_pool,
 	    .descriptorSetCount = 1,
 	    .pSetLayouts        = &layout,
@@ -248,6 +313,7 @@ vk::DescriptorPool DescriptorAllocator::create_pool()
 	pool_cinfo.maxSets       = DEFAULT_SIZE;
 	pool_cinfo.poolSizeCount = to_u32(pool_sizes.size());
 	pool_cinfo.pPoolSizes    = pool_sizes.data();
+	pool_cinfo.flags         = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
 	return device_.get_handle().createDescriptorPool(pool_cinfo);
 }
 

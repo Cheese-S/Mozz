@@ -254,10 +254,46 @@ bool Instance::is_physical_device_suitable(const PhysicalDevice &physical_device
 		is_swap_chain_supported = !details.formats.empty() && !details.present_modes.empty();
 	}
 
-	physical_device.get_handle().getFeatures2(&required_features);
+	vk::StructureChain<
+	    vk::PhysicalDeviceFeatures2,
+	    vk::PhysicalDeviceAccelerationStructureFeaturesKHR,
+	    vk::PhysicalDeviceRayTracingPipelineFeaturesKHR,
+	    vk::PhysicalDeviceBufferDeviceAddressFeatures,
+	    vk::PhysicalDeviceHostQueryResetFeatures,
+	    vk::PhysicalDeviceDescriptorIndexingFeatures>
+	    supported_features;
 
-	return indices.is_complete() && is_extensions_supported && is_swap_chain_supported &&
-	       required_features.features.samplerAnisotropy;
+	physical_device.get_handle().getFeatures2(&supported_features.get<vk::PhysicalDeviceFeatures2>());
+
+	auto &core_features                      = supported_features.get<vk::PhysicalDeviceFeatures2>();
+	core_features.features.samplerAnisotropy = true;
+	core_features.features.sampleRateShading = true;
+	core_features.features.shaderInt64       = true;
+
+	auto &acc_struct_features                 = supported_features.get<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>();
+	acc_struct_features.accelerationStructure = true;
+
+	auto &ray_tracing_ppl_features              = supported_features.get<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR>();
+	ray_tracing_ppl_features.rayTracingPipeline = true;
+
+	auto &device_address_features               = supported_features.get<vk::PhysicalDeviceBufferDeviceAddressFeatures>();
+	device_address_features.bufferDeviceAddress = true;
+
+	auto &host_query_reset_features          = supported_features.get<vk::PhysicalDeviceHostQueryResetFeatures>();
+	host_query_reset_features.hostQueryReset = true;
+
+	auto &desc_index_feautres                  = supported_features.get<vk::PhysicalDeviceDescriptorIndexingFeatures>();
+	desc_index_feautres.runtimeDescriptorArray = true;
+
+	bool is_features_supported = core_features.features.samplerAnisotropy && core_features.features.sampleRateShading && core_features.features.shaderInt64 &&
+	                             acc_struct_features.accelerationStructure && ray_tracing_ppl_features.rayTracingPipeline &&
+	                             device_address_features.bufferDeviceAddress &&
+	                             host_query_reset_features.hostQueryReset &&
+	                             desc_index_feautres.runtimeDescriptorArray;
+
+	return indices.is_complete() &&
+	       is_extensions_supported && is_swap_chain_supported &&
+	       is_features_supported;
 }
 
 const vk::SurfaceKHR &Instance::get_surface() const

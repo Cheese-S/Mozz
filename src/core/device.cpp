@@ -26,7 +26,7 @@ const std::vector<const char *> Device::RAY_TRACING_EXTENSIONS = {
     VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
 };
 
-Device::Device(Instance &instance, PhysicalDevice &physical_device, std::vector<const char *> &device_extensions) :
+Device::Device(Instance &instance, PhysicalDevice &physical_device, std::vector<const char *> &requested_extensions, vk::PhysicalDeviceFeatures2 &requested_features) :
     instance_(instance)
 {
 	QueueFamilyIndices indices        = physical_device.get_queue_family_indices();
@@ -43,46 +43,15 @@ Device::Device(Instance &instance, PhysicalDevice &physical_device, std::vector<
 		queue_cinfos.push_back(queue_cinfo);
 	}
 
-	for (const char *extension : RAY_TRACING_EXTENSIONS)
-	{
-		device_extensions.push_back(extension);
-	}
-
-	vk::PhysicalDeviceFeatures required_features;
-	required_features.samplerAnisotropy = true;
-	required_features.sampleRateShading = true;
-
-	vk::StructureChain<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceAccelerationStructureFeaturesKHR, vk::PhysicalDeviceRayTracingPipelineFeaturesKHR, vk::PhysicalDeviceBufferDeviceAddressFeatures, vk::PhysicalDeviceHostQueryResetFeatures, vk::PhysicalDeviceDescriptorIndexingFeatures> chain;
-
-	auto &core_features                      = chain.get<vk::PhysicalDeviceFeatures2>();
-	core_features.features.samplerAnisotropy = true;
-	core_features.features.sampleRateShading = true;
-	core_features.features.shaderInt64       = true;
-
-	auto &acc_struct_features                 = chain.get<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>();
-	acc_struct_features.accelerationStructure = true;
-
-	auto &ray_tracing_ppl_features              = chain.get<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR>();
-	ray_tracing_ppl_features.rayTracingPipeline = true;
-
-	auto &device_address_features               = chain.get<vk::PhysicalDeviceBufferDeviceAddressFeatures>();
-	device_address_features.bufferDeviceAddress = true;
-
-	auto &host_query_reset_features          = chain.get<vk::PhysicalDeviceHostQueryResetFeatures>();
-	host_query_reset_features.hostQueryReset = true;
-
-	auto &desc_index_feautres                  = chain.get<vk::PhysicalDeviceDescriptorIndexingFeatures>();
-	desc_index_feautres.runtimeDescriptorArray = true;
-
 	vk::DeviceCreateInfo device_cinfo{
-	    .pNext                   = &core_features,
+	    .pNext                   = &requested_features,
 	    .flags                   = {},
 	    .queueCreateInfoCount    = to_u32(queue_cinfos.size()),
 	    .pQueueCreateInfos       = queue_cinfos.data(),
 	    .enabledLayerCount       = to_u32(Instance::VALIDATION_LAYERS.size()),
 	    .ppEnabledLayerNames     = instance.VALIDATION_LAYERS.data(),
-	    .enabledExtensionCount   = to_u32(device_extensions.size()),
-	    .ppEnabledExtensionNames = device_extensions.data(),
+	    .enabledExtensionCount   = to_u32(requested_extensions.size()),
+	    .ppEnabledExtensionNames = requested_extensions.data(),
 	};
 
 	handle_ = physical_device.get_handle().createDevice(device_cinfo);

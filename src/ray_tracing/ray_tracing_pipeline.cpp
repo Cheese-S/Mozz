@@ -25,6 +25,10 @@ RaytracingPipeline::RaytracingPipeline(Device &device, std::array<const char *, 
 	stage_cinfo.module  = create_shader_module(shader_names[eMiss]);
 	stage_cinfos[eMiss] = stage_cinfo;
 
+	stage_cinfo.stage     = vk::ShaderStageFlagBits::eMissKHR;
+	stage_cinfo.module    = create_shader_module(shader_names[eShadow]);
+	stage_cinfos[eShadow] = stage_cinfo;
+
 	stage_cinfo.stage         = vk::ShaderStageFlagBits::eClosestHitKHR;
 	stage_cinfo.module        = create_shader_module(shader_names[eClosestHit]);
 	stage_cinfos[eClosestHit] = stage_cinfo;
@@ -46,6 +50,10 @@ RaytracingPipeline::RaytracingPipeline(Device &device, std::array<const char *, 
 	group_cinfo.generalShader = eMiss;
 	group_cinfos.push_back(group_cinfo);
 
+	group_cinfo.type          = vk::RayTracingShaderGroupTypeKHR::eGeneral;
+	group_cinfo.generalShader = eShadow;
+	group_cinfos.push_back(group_cinfo);
+
 	group_cinfo.type             = vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup;
 	group_cinfo.generalShader    = VK_SHADER_UNUSED_KHR;
 	group_cinfo.closestHitShader = eClosestHit;
@@ -58,7 +66,7 @@ RaytracingPipeline::RaytracingPipeline(Device &device, std::array<const char *, 
 	    .pStages                      = stage_cinfos.data(),
 	    .groupCount                   = to_u32(group_cinfos.size()),
 	    .pGroups                      = group_cinfos.data(),
-	    .maxPipelineRayRecursionDepth = 1,
+	    .maxPipelineRayRecursionDepth = 2,
 	    .layout                       = pl_layout_,
 	};
 

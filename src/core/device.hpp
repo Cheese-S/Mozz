@@ -21,7 +21,7 @@ class Device : public VulkanObject<typename vk::Device>
 	static const std::vector<const char *> REQUIRED_EXTENSIONS;
 	static const std::vector<const char *> RAY_TRACING_EXTENSIONS;
 
-	Device(Instance &instance, PhysicalDevice &physical_device, std::vector<const char *> &device_extensions);
+	Device(Instance &instance, PhysicalDevice &physical_device, std::vector<const char *> &requested_extensions, vk::PhysicalDeviceFeatures2 &requested_features);
 	~Device() override;
 
 	CommandBuffer begin_one_time_buf() const;

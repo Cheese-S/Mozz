@@ -34,6 +34,7 @@ class GLTFLoader
 {
   public:
 	static const glm::vec3 MZ_CONVERSION_SCALE;
+	static const uint64_t  MAX_TEXUTRE_ID;
 
 	GLTFLoader(const Context &ctx);
 	virtual ~GLTFLoader() = default;

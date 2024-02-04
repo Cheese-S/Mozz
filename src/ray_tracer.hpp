@@ -104,6 +104,12 @@ class Raytracer
 		uint64_t  occlusion_texture_idx;
 		uint64_t  emissive_texture_idx;
 		uint64_t  metallic_roughness_texture_idx;
+		uint64_t  pad;
+	};
+
+	struct Light
+	{
+		glm::vec4 pos;
 	};
 
 	void main_loop();
@@ -125,6 +131,7 @@ class Raytracer
 	FrameResource &get_current_frame_resource();
 
 	void load_scene(const char *scene_name);
+	void create_context();
 	void create_rendering_resources();
 	void create_frame_resources();
 
@@ -134,6 +141,7 @@ class Raytracer
 
 	void create_material_ubo();
 	void create_submesh_ainfo_ubo();
+	void create_light_ubo();
 	void create_raytrace_descriptors();
 	void create_storage_image();
 	void create_ASs();
@@ -152,6 +160,7 @@ class Raytracer
 	std::unique_ptr<ImageResource>        p_storage_img_;
 	std::unique_ptr<Buffer>               p_submesh_ainfos_buf;
 	std::unique_ptr<Buffer>               p_material_buf;
+	std::unique_ptr<Buffer>               p_light_buf;
 
 	sg::Node *p_camera_node_ = nullptr;
 

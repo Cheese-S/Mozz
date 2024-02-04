@@ -156,7 +156,7 @@ std::vector<std::unique_ptr<AccelerationStructure>> ASBuilder::build_BLASs(std::
 		std::vector<uint32_t> max_prim_count(blas_minfo.range_infos.size());
 		for (uint32_t j = 0; j < blas_minfo.range_infos.size(); j++)
 		{
-			max_prim_count[j] = blas_minfo.range_infos[i].primitiveCount;
+			max_prim_count[j] = blas_minfo.range_infos[j].primitiveCount;
 		}
 
 		device_.get_handle().getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, &build_AS.build_info, max_prim_count.data(), &build_AS.size_info);

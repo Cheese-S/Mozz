@@ -59,6 +59,7 @@ const glm::vec4 DEFAULT_WEIGHT = glm::vec4(0.0f);
 const glm::vec4 DEFAULT_COLOR  = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
 const glm::vec3 GLTFLoader::MZ_CONVERSION_SCALE = glm::vec3(-1, 1, 1);
+const uint64_t  GLTFLoader::MAX_TEXUTRE_ID      = 1024;
 
 template <class T, class Y>
 struct TypeCast
@@ -98,7 +99,7 @@ void GLTFLoader::load_gltf_model(const std::string &file_name)
 	std::string file_extension = fu::get_file_extension(gltf_file_path);
 	bool        load_result;
 
-	if (file_extension == "bin")
+	if (file_extension == "glb")
 	{
 		load_result =
 		    gltf_loader.LoadBinaryFromFile(&gltf_model_, &err, &warn, gltf_file_path.c_str());
@@ -362,7 +363,7 @@ void GLTFLoader::load_textures()
 
 std::unique_ptr<sg::Texture> GLTFLoader::create_default_texture(sg::Sampler &default_sampler)
 {
-	std::unique_ptr<sg::Texture> p_texture = std::make_unique<sg::Texture>("default_texture", texture_id_++);
+	std::unique_ptr<sg::Texture> p_texture = std::make_unique<sg::Texture>("default_texture", MAX_TEXUTRE_ID);
 	std::unique_ptr<sg::Image>   p_image   = create_default_texture_image();
 	p_texture->p_resource_                 = &p_image->get_resource();
 	p_texture->p_sampler_                  = &default_sampler;

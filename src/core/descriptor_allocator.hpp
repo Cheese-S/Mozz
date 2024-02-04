@@ -30,7 +30,7 @@ class DescriptorAllocator
 	DescriptorAllocator(Device &device);
 	~DescriptorAllocator();
 
-	vk::DescriptorSet allocate(vk::DescriptorSetLayout &layout);
+	vk::DescriptorSet allocate(vk::DescriptorSetLayout &layout, const void *p_next = nullptr);
 	void              reset_pools();
 	const Device     &get_device();
 
@@ -85,6 +85,7 @@ class DescriptorBuilder
 	                                    vk::DescriptorType type, vk::ShaderStageFlags flags);
 	DescriptorBuilder       &bind_images(uint32_t binding, std::vector<vk::DescriptorImageInfo> &image_infos, vk::DescriptorType type, vk::ShaderStageFlags flags);
 	DescriptorBuilder       &bind_sampler(uint32_t binding, vk::DescriptorImageInfo sampler_image_info, vk::DescriptorType type, vk::ShaderStageFlags flags);
+	DescriptorBuilder       &bind_unbounded_array(uint32_t binding, std::vector<vk::DescriptorImageInfo> &image_infos, uint32_t max_count, vk::ShaderStageFlags flags);
 	DescriptorAllocation     build();
 
   private:
@@ -92,6 +93,7 @@ class DescriptorBuilder
 	                  DescriptorAllocator   &descriptor_allocator);
 	std::vector<vk::WriteDescriptorSet>         writes_;
 	std::vector<vk::DescriptorSetLayoutBinding> layout_bindings_;
+	bool                                        has_unbounded_array_ = false;
 
 	DescriptorLayoutCache &layout_cache_;
 	DescriptorAllocator   &allocator_;
