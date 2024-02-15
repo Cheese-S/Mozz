@@ -1,11 +1,18 @@
 # Mozz
 
-Mozz is a basic raytracer that serves the purpose of showcasing the necessary steps to create a Vulkan raytracer. It answers the following questions:
+Mozz is a basic Whitted-style raytracer written in Vulka that showcases the necessary steps to create a Vulkan raytracer. It answers the following questions:
 - How to create both bottom level acceleration structures (with compaction) and top level acceleration structure 
 - How to create a shader binding table 
 - How to build a ray tracing pipeline 
-- How to access an entire scene's data in the shader through addressable buffer and texture arrays
+- How to access an entire scene's data in the shader through addressable buffer and bindless design. 
+
+In addition, Mozz supports the following features:
+- Perfect Reflection
+- Perfect Refraction
+- PBR Shading
+- GLTF Loading
   
+![](misc/example.png)
 ## Building 
 ### Prerequisites
 - [Download and install Visual Studio 2022](https://visualstudio.microsoft.com/vs/)
