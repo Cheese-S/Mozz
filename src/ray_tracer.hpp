@@ -98,13 +98,14 @@ class Raytracer
 	struct Material
 	{
 		glm::vec4 base_color;
-		glm::vec4 metallic_roughness;
+		glm::vec4 metallic_roughness_ior;
 		uint64_t  albedo_texture_idx;
 		uint64_t  normal_texture_idx;
 		uint64_t  occlusion_texture_idx;
 		uint64_t  emissive_texture_idx;
 		uint64_t  metallic_roughness_texture_idx;
-		uint64_t  pad;
+		float     ior;
+		float     pad;
 	};
 
 	struct Light

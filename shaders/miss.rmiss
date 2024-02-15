@@ -1,7 +1,11 @@
 #version 460
 #extension GL_EXT_ray_tracing : enable
 
-layout(location = 0) rayPayloadInEXT vec3 hit_val;
+#include "definition.glsl"
+
+layout(location = 0) rayPayloadInEXT ColorPayload color_payload;
+
+layout(set = 0, binding = 7) uniform samplerCube background;
 
 
 layout(push_constant) uniform PCO {
@@ -11,5 +15,6 @@ layout(push_constant) uniform PCO {
 } pco;
 
 void main() {
-    hit_val = pco.clear_color.xyz;
+    color_payload.color = texture(background, gl_WorldRayDirectionEXT).rgb;
+    // color_payload.color = pco.clear_color.rgb;
 }

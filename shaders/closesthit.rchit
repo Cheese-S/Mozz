@@ -5,11 +5,15 @@
 #extension GL_EXT_buffer_reference2 : require
 #extension GL_ARB_gpu_shader_int64 : require
 #extension GL_EXT_nonuniform_qualifier : require
+#extension GL_GOOGLE_include_directive : enable
+
+#include "definition.glsl"
 
 
 #define PI 3.1415926535897932384626433832795
 
-const int UNDEFINED_TEXTURE = 1024;
+const uint UNDEFINED_TEXTURE = 1024;
+const vec3 LIGHT_POS = vec3(0.5, 0.5, 0.5);
 
 struct Material {
     vec4 base_color;
@@ -19,7 +23,8 @@ struct Material {
 	uint64_t  occlusion_texture_idx;
 	uint64_t  emissive_texture_idx;
 	uint64_t  metallic_roughness_texture_idx;
-    uint64_t pad;
+    float ior;
+    float pad;
 };
 
 struct SubmeshAccessInfo {
@@ -40,9 +45,11 @@ struct Vertex {
 
 hitAttributeEXT vec2 attribs;
 
-layout(location = 0) rayPayloadInEXT vec3 hit_val;
+layout(location = ColorPayloadIndex) rayPayloadInEXT ColorPayload color_payload;
 
-layout(location = 1) rayPayloadEXT bool is_shadowed;
+layout(location = ShadowPayloadIndex) rayPayloadEXT bool is_shadowed;
+
+
 
 layout(buffer_reference, scalar) buffer Vertices {
     Vertex v[];
@@ -65,7 +72,7 @@ layout(set = 0, binding = 3, scalar) buffer SubmeshAccessInfoArray {
 layout(set = 0, binding = 4) uniform samplerCube irradiance_map;
 layout(set = 0, binding = 5) uniform samplerCube prefilter_map;
 layout(set = 0, binding = 6) uniform sampler2D brdf_map;
-layout(set = 0, binding = 7) uniform sampler2D textures[];
+layout(set = 0, binding = 8) uniform sampler2D textures[];
 
 
 
@@ -116,6 +123,23 @@ float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
 	float GL = dotNL / (dotNL * (1.0 - k) + k);
 	float GV = dotNV / (dotNV * (1.0 - k) + k);
 	return GL * GV;
+}
+
+float fresnel(vec3 D, vec3 N, float eta_incident, float eta_trans) {
+    float cos_incident = dot(D, N);
+    float sin_trans = eta_incident / eta_trans * sqrt(max(0, 1 - cos_incident * cos_incident));
+    if (sin_trans >= 1.0f) {
+        return 1.0f; 
+    } else {
+        float cos_trans = sqrt(max(0, 1 - sin_trans * sin_trans));
+        cos_incident = abs(cos_incident);   
+        float rS = ((eta_trans * cos_incident) - (eta_incident * cos_trans)) /
+                   ((eta_trans * cos_incident) + (eta_incident * cos_trans));
+        float rP = ((eta_incident * cos_incident) - (eta_trans * cos_trans)) /
+                   ((eta_incident * cos_incident) + (eta_trans * cos_trans));
+        return (rS * rS + rP * rP) / 2.0f;
+    }
+    
 }
 
 vec3 F_Schlick(float cosTheta, vec3 F0)
@@ -170,7 +194,7 @@ vec4 read_texture(int texture_idx, vec2 uv) {
     return texture(textures[texture_idx], uv);
 }
 
-vec3 get_color(Material mat, vec2 uv) {
+vec3 get_albedo(Material mat, vec2 uv) {
     if (mat.albedo_texture_idx != UNDEFINED_TEXTURE) {
         return read_texture(int(mat.albedo_texture_idx), uv).xyz;
     }
@@ -198,7 +222,99 @@ vec3 get_emissive(Material mat, vec2 uv) {
     return vec3(0, 0, 0);
 }
 
+bool is_opaque(float ior) {
+    return ior < 0.0f;
+}
+
+float trace_shadow_ray(vec3 origin, vec3 dir, float light_distance) {
+    float t_min = 0.0001;
+    float t_max = light_distance;
+    uint flags = gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsSkipClosestHitShaderEXT;
+    is_shadowed = true;
+    traceRayEXT(
+        tlas,
+        flags,
+        0xFF,
+        0,
+        0,
+        1,
+        origin,
+        t_min,
+        dir,
+        t_max,
+        ShadowPayloadIndex
+    );
+
+    if (is_shadowed) {
+        return 0.3;
+    } else {
+        return 1;
+    }
+}
+
+vec3 trace_reflection_ray(vec3 origin, vec3 dir) {
+    float t_min = 0.001;
+    float t_max = 1000;
+    uint flags = gl_RayFlagsOpaqueEXT;
+    color_payload.depth++;
+    traceRayEXT(
+        tlas,
+        flags,
+        0xFF,
+        0,
+        0,
+        0,
+        origin,
+        t_min, 
+        dir, 
+        t_max,
+        ColorPayloadIndex
+    );
+    color_payload.depth--;
+    return color_payload.color;
+}
+
+vec3 trace_refraction_ray(vec3 N, vec3 D, vec3 origin, float ior) {
+    float N_dot_D = dot(D, N);
+    vec3 refract_N;
+    if (N_dot_D > 0.0f) {
+        refract_N = -N;
+    } else {
+        refract_N = N;
+    }
+    vec3 dir = refract(D, refract_N, color_payload.curr_ior / ior);
+    float t_min = 0.001;
+    float t_max = 1000;
+    float old_ior = color_payload.curr_ior;
+    uint flags = gl_RayFlagsOpaqueEXT;
+    color_payload.depth++;
+    color_payload.curr_ior = ior;
+    traceRayEXT(
+        tlas,
+        flags,
+        0xFF,
+        0,
+        0,
+        0,
+        origin,
+        t_min,
+        dir,
+        t_max, 
+        ColorPayloadIndex
+    );
+    color_payload.depth--;
+    color_payload.curr_ior = old_ior;
+    return color_payload.color;
+}
+
+
+
 void  main() {
+    /* ------------------------ RETURN IF HIT DEPTH LIMIT ----------------------- */
+    if (color_payload.depth > MAX_DEPTH) {
+        color_payload.color = vec3(0, 0, 0);
+        return;
+    }
     /* -------------------------------- UNPACKING ------------------------------- */
     SubmeshAccessInfo submesh_ainfo = submesh_access_array.m[gl_InstanceCustomIndexEXT];
     Vertices vertices = Vertices(submesh_ainfo.vert_buf_addr);
@@ -214,84 +330,97 @@ void  main() {
     vec3 pos = v0.pos * barycentrics.x + v1.pos * barycentrics.y + v2.pos * barycentrics.z;
     vec3 world_pos = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0));
     vec2 uv = v0.uv * barycentrics.x + v1.uv * barycentrics.y + v2.uv * barycentrics.z;
-    vec3 norm = v0.norm * barycentrics.x + v1.norm * barycentrics.y + v2.norm * barycentrics.z;
-
-    vec3 in_normal = normalize(vec3(norm * gl_WorldToObjectEXT));
-    vec3 tangent_normal = read_texture(int(mat.normal_texture_idx), uv).xyz * 2.0 - 1.0;
-
-    vec3 N = get_normal(v0, v1, v2, tangent_normal, in_normal);
-    vec3 V = -normalize(gl_WorldRayDirectionEXT);
-    vec3 R = reflect(-V, N);
-    vec3 raw_color = get_color(mat, uv);
-    vec2 metallic_roughness = get_metallic_roughness(mat, uv);
-
-    float metallic = metallic_roughness.x;
-    float roughness = metallic_roughness.y;
-
-    vec3 F0 = vec3(0.04);
-    F0 = mix(F0, raw_color, metallic);
-
-    vec3 light_pos = vec3(5.0, 5.0, 5.0);
-    vec3 L = normalize(light_pos - world_pos);
-
-    float attenuation = 1;
-    vec3 Lo = vec3(0, 0, 0);
-    if (dot(N, L) > 0) {
-        float t_min = 0.001;
-        float t_max = distance(light_pos, world_pos);
-        vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
-        vec3 ray_dir = L;
-        uint flags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
-        is_shadowed = true;
-        traceRayEXT(
-            tlas,
-            flags, 
-            0xFF,
-            0,
-            0,
-            1,
-            origin,
-            t_min,
-            ray_dir,
-            t_max,
-            1
-        );
-
-        if (is_shadowed) {
-            attenuation = 0.3;
-        } else {
-            Lo = specular_contribution(L, V, N, F0, raw_color, metallic, roughness);
-        }
+    vec3 vertex_normal = v0.norm * barycentrics.x + v1.norm * barycentrics.y + v2.norm * barycentrics.z;
+    vec3 world_normal = normalize(vec3(vertex_normal * gl_WorldToObjectEXT));
+    vec3 N;
+    if (mat.normal_texture_idx == UNDEFINED_TEXTURE) {
+        N = world_normal;
+    } else {
+        vec3 tangent_normal = read_texture(int(mat.normal_texture_idx), uv).xyz * 2.0 - 1.0;
+        N = get_normal(v0, v1, v2, tangent_normal, world_normal);
     }
 
+    /* ------------------------------- SCENE INFO ------------------------------- */
+    vec3 origin = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+    vec3 F0 = vec3(0.04);
+    vec3 D = normalize(gl_WorldRayDirectionEXT);
+    vec3 V = -D;
+    vec3 L = normalize(LIGHT_POS - world_pos);
+    vec3 R = reflect(D, N);
 
 
+    vec3 albedo = get_albedo(mat, uv);
+    vec2 metallic_roughness = get_metallic_roughness(mat, uv);
+    float metallic = metallic_roughness.x;    
+    float roughness = metallic_roughness.y;
+
+
+    /* ------------------------------- DIRECT SHADING -------------------- */
     vec2 brdf = texture(brdf_map, vec2(max(dot(N, V), 0.0), roughness)).rg;
-    vec3 reflection = prefilter_reflection(R, roughness).rgb;
+    vec3 ibl_reflection = prefilter_reflection(R, roughness).rgb;
     vec3 irradiance = texture(irradiance_map, N).rgb;
-
-    vec3 diffuse = irradiance * raw_color;
-
+    vec3 diffuse = irradiance * albedo;
     vec3 F = F_SchlickR(max(dot(N, V), 0.0), F0, roughness);
-
-    // vec3 specular = reflection * (F * (brdf.x + brdf.y));
-    vec3 specular = vec3(0,0,0);
-
+    // vec3 specular = ibl_reflection * (F * (brdf.x + brdf.y));
     vec3 kD = 1.0 - F;
     kD *= 1.0 - metallic;
-    vec3 ambient = (kD * diffuse + specular);
 
-    vec3 color = ambient + Lo;
+    vec3 color = kD * diffuse;
 
-    color = mix(color, color * get_ao(mat, uv), OCCLUSION_STRENGTH);
+    vec3 Lo = vec3(0, 0, 0);
+    if (is_opaque(mat.ior)) {
+        float dot_NL = clamp(dot(N, L), 0.0, 1.0);
+        if (dot_NL > 0.000001) {
+            // light info
+            vec3 H = normalize(V + L); 
+            float light_distance = length(LIGHT_POS -  world_pos);
+            float attenuation = trace_shadow_ray(origin, L, light_distance);
+            vec3 radiance = attenuation * vec3(4.0f, 4.0f, 4.0f);
 
-    color *= attenuation;
+            float dot_NV = clamp(dot(N, V), 0.0, 1.0);
+            float dot_NH = clamp(dot(N, H), 0.0, 1.0);
 
-    color += get_emissive(mat, uv);
+            // BRDF
+            float D = D_GGX(dot_NH, roughness);
+            float G = G_SchlicksmithGGX(dot_NL, dot_NV, roughness);
 
-    color = color / (color + vec3(1.0));
+            vec3 numerator = D * F * G;
+            float denominator = 4.0f * dot_NV * dot_NL + 0.0001;
+            vec3 specular = numerator / denominator;
+            Lo += (kD * albedo / PI + specular) * radiance * dot_NL;
+            color += kD * diffuse;
+        }
+    }
+    color += Lo; 
+    /* ----------------------------- SECONDARY RAYS ----------------------------- */
 
-    color = pow(color, vec3(1.0 / 2.2));
+    vec3 reflection = vec3(0, 0, 0);
+    vec3 refraction = vec3(0, 0, 0);
+    if (metallic > 0.0000001f) {
+        reflection = trace_reflection_ray(origin, R);
+        reflection *= (1 - roughness) * (1 - roughness) * metallic * albedo;
+        
+        color += reflection;
+    }
 
-    hit_val = color;
+    if(mat.ior > 0.0) {
+        float F = fresnel(D, N, color_payload.curr_ior, mat.ior);
+        refraction = trace_refraction_ray(N, D, origin, mat.ior);
+        if (dot(D, N) < 0.0f && F > 0.0f) {
+            reflection = trace_reflection_ray(origin, R);
+        }
+
+        if (F < 0.99999999f) {
+            refraction = trace_refraction_ray(N, D, origin, mat.ior);
+        }
+        color += mix(refraction, reflection, F);
+    }
+
+    // vec3 emissive = get_emissive(mat, uv);
+    // color += emissive;
+
+    
+    color_payload.color = color;
+
+
 }

@@ -17,6 +17,7 @@ class ArcBallCamera : public NodeScript
   private:
 	void                                  update_camera_transform();
 	float                                 dist_;
+	float                                 scene_sz_;
 	glm::vec3                             center_;
 	glm::vec2                             mouse_last_pos_;
 	glm::vec2                             mouse_move_delta_;

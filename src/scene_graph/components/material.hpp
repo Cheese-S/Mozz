@@ -27,6 +27,7 @@ class Material : public Component
 	glm::vec3 emissive_{0.0f, 0.0f, 0.0f};
 	bool      is_double_sided{false};
 	float     alpha_cutoff_{0.5f};
+	float     ior{1.5f};
 	AlphaMode alpha_mode_{AlphaMode::Opaque};
 };
 }        // namespace mz::sg

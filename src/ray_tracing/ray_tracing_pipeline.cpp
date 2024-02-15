@@ -66,7 +66,7 @@ RaytracingPipeline::RaytracingPipeline(Device &device, std::array<const char *, 
 	    .pStages                      = stage_cinfos.data(),
 	    .groupCount                   = to_u32(group_cinfos.size()),
 	    .pGroups                      = group_cinfos.data(),
-	    .maxPipelineRayRecursionDepth = 2,
+	    .maxPipelineRayRecursionDepth = 4,
 	    .layout                       = pl_layout_,
 	};
 

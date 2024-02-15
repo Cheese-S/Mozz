@@ -27,8 +27,8 @@ class PBRMaterial : public Material
 	virtual ~PBRMaterial() = default;
 	virtual std::type_index get_type() override;
 	glm::vec4               base_color_factor_{0.0f, 0.0f, 0.0f, 0.0f};
-	float                   metallic_factor{0.0f};
-	float                   roughness_factor{0.0f};
+	float                   metallic_factor{1.0f};
+	float                   roughness_factor{1.0f};
 	PBRMaterialFlag         flag;
 	vk::DescriptorSet       set;
 };

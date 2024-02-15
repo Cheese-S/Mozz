@@ -52,7 +52,7 @@ Raytracer::Raytracer()
 	p_descriptor_state_ = std::make_unique<DescriptorState>(p_ctx_->device);
 	p_cmd_pool_         = std::make_unique<CommandPool>(p_ctx_->device, p_ctx_->device.get_graphics_queue());
 	p_swapchain_        = std::make_unique<Swapchain>(*p_ctx_, p_window_->get_extent());
-	load_scene("2.0/ToyCar/glTF/ToyCar.gltf");
+	load_scene("2.0/ToyCar/glTF/test2.0.gltf");
 	create_rendering_resources();
 	create_pbr_resource();
 	create_raytrace_resources();
@@ -521,13 +521,18 @@ void Raytracer::create_material_ubo()
 		sg::PBRMaterial *p_material = p_materials[i];
 		Material         mat{
 		            .base_color                     = p_material->base_color_factor_,
-		            .metallic_roughness             = glm::vec4{0.0, p_material->roughness_factor, p_material->metallic_factor, 0.0},
+		            .metallic_roughness_ior         = glm::vec4{0.0, p_material->roughness_factor, p_material->metallic_factor, 0.0},
 		            .albedo_texture_idx             = p_material->texture_map_.count("base_color_texture") ? p_material->texture_map_["base_color_texture"]->get_id() : default_texture->get_id(),
 		            .normal_texture_idx             = p_material->texture_map_.count("normal_texture") ? p_material->texture_map_["normal_texture"]->get_id() : default_texture->get_id(),
 		            .occlusion_texture_idx          = p_material->texture_map_.count("occlusion_texture") ? p_material->texture_map_["occlusion_texture"]->get_id() : default_texture->get_id(),
 		            .emissive_texture_idx           = p_material->texture_map_.count("emissive_texture") ? p_material->texture_map_["emissive_texture"]->get_id() : default_texture->get_id(),
 		            .metallic_roughness_texture_idx = p_material->texture_map_.count("metallic_roughness_texture") ? p_material->texture_map_["metallic_roughness_texture"]->get_id() : default_texture->get_id(),
+		            .ior                            = -1,
         };
+		if (p_material->get_name() == "Material.003")
+		{
+			mat.ior = 1.5;
+		}
 		materials.push_back(mat);
 	}
 	size_t buf_size = sizeof(Material) * materials.size();
@@ -589,6 +594,12 @@ void Raytracer::create_raytrace_descriptors()
 	    .sampler = VK_NULL_HANDLE,
 	};
 
+	vk::DescriptorImageInfo background{
+	    .sampler     = baked_pbr_.p_background->sampler.get_handle(),
+	    .imageView   = baked_pbr_.p_background->resource.get_view().get_handle(),
+	    .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+	};
+
 	vk::DescriptorImageInfo irradiance{
 	    .sampler     = baked_pbr_.p_irradiance->sampler.get_handle(),
 	    .imageView   = baked_pbr_.p_irradiance->resource.get_view().get_handle(),
@@ -617,10 +628,6 @@ void Raytracer::create_raytrace_descriptors()
 		    .imageView   = p_texture->p_resource_->get_view().get_handle(),
 		    .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
 		});
-		if (!sampler_dinfo.sampler)
-		{
-			sampler_dinfo.sampler = p_texture->p_sampler_->get_handle();
-		}
 	}
 
 	DescriptorAllocation global_set_allocation =
@@ -632,7 +639,8 @@ void Raytracer::create_raytrace_descriptors()
 	        .bind_image(4, irradiance, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eClosestHitKHR)
 	        .bind_image(5, prefilter, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eClosestHitKHR)
 	        .bind_image(6, brdf_lut, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eClosestHitKHR)
-	        .bind_unbounded_array(7, texture_img_dinfos, 1024, vk::ShaderStageFlagBits::eClosestHitKHR)
+	        .bind_image(7, background, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eMissKHR)
+	        .bind_unbounded_array(8, texture_img_dinfos, 1024, vk::ShaderStageFlagBits::eClosestHitKHR)
 	        .build();
 
 	raytrace_.global_set          = global_set_allocation.set;
@@ -714,21 +722,19 @@ void Raytracer::created_shader_binding_table()
 	raytrace_.miss_region.deviceAddress = sbt_buf_addr + raytrace_.rgen_region.size;
 	raytrace_.hit_region.deviceAddress  = raytrace_.miss_region.deviceAddress + raytrace_.miss_region.size;
 
-	uint8_t *p_handle = handles.data();
-	size_t   offset   = 0;
-	raytrace_.p_sbt_buf->update(p_handle, handle_size, offset);
-
+	size_t offset     = 0;
+	int    handle_idx = 0;
+	auto   get_handle = [&](int i) { return handles.data() + i * handle_size; };
+	raytrace_.p_sbt_buf->update(get_handle(handle_idx++), handle_size, offset);
 	offset = raytrace_.rgen_region.size;
 	for (int i = 0; i < miss_cnt; i++)
 	{
-		p_handle += handle_size;
-		raytrace_.p_sbt_buf->update(p_handle, handle_size, offset);
+		raytrace_.p_sbt_buf->update(get_handle(handle_idx++), handle_size, offset);
 		offset += raytrace_.miss_region.stride;
 	}
 
-	p_handle += handle_size;
 	offset = raytrace_.rgen_region.size + raytrace_.miss_region.size;
-	raytrace_.p_sbt_buf->update(p_handle, handle_size, offset);
+	raytrace_.p_sbt_buf->update(get_handle(handle_idx++), handle_size, offset);
 }
 
 }        // namespace mz

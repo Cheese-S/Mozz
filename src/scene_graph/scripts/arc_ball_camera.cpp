@@ -12,9 +12,9 @@ namespace mz::sg
 ArcBallCamera::ArcBallCamera(Node &camera_node, const AABB &scene_bd, size_t id) :
     NodeScript(camera_node, "", id)
 {
-	auto &T = get_node().get_transform();
-	center_ = scene_bd.get_center();
-	dist_   = glm::length(scene_bd.get_scale());
+	auto &T   = get_node().get_transform();
+	center_   = scene_bd.get_center();
+	scene_sz_ = dist_ = glm::length(scene_bd.get_scale());
 
 	T.set_tranlsation(glm::vec3(center_.x, center_.y, center_.z + dist_));
 }
@@ -31,7 +31,7 @@ void ArcBallCamera::update(float delta_time)
 
 	if (scroll_delta_.y != 0)
 	{
-		delta_dist_ -= scroll_delta_.y * 3.0;
+		delta_dist_ -= scroll_delta_.y / 10;
 	}
 
 	delta_rotation *= delta_time;

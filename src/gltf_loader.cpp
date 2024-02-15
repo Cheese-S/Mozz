@@ -448,11 +448,11 @@ std::unique_ptr<sg::PBRMaterial> GLTFLoader::parse_material(
 		}
 		else if (gltf_value.first == "metallicFactor")
 		{
-			material->metallic_factor = static_cast<float>(gltf_value.second.Factor());
+			material->metallic_factor = static_cast<float>(gltf_value.second.number_value);
 		}
 		else if (gltf_value.first == "roughnessFactor")
 		{
-			material->roughness_factor = static_cast<float>(gltf_value.second.Factor());
+			material->roughness_factor = static_cast<float>(gltf_value.second.number_value);
 		}
 	}
 
